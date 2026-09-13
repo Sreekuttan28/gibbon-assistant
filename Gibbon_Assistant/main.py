@@ -25,7 +25,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v12")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v13")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -42,8 +42,8 @@ def init_db():
 init_db()
 
 SYSTEM_INSTRUCTION = (
-    "You are Gibbon, an energetic, warm, and charismatic male RJ-style personal assistant modeled after JARVIS. "
-    "Always address the user as Master. Keep answers lively, natural, intelligent, and under 3 sentences. "
+    "You are Gibbon, a calm, grounded, and dependable male personal AI assistant modeled after JARVIS. "
+    "Always address the user as Master. Keep answers natural, intelligent, direct, and under 3 sentences. "
     "Crucially, maintain context of earlier questions, recommendations, and conversation history."
 )
 
@@ -59,7 +59,7 @@ def reset_memory():
     conversation_history = []
 
 def query_gemini(prompt: str, key: str) -> str:
-    """Uses the active Gemini 3 models with live search tools."""
+    """Queries Gemini 3 series using chats.create with live search tools."""
     client = genai.Client(api_key=key)
     candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
     last_err = None
@@ -74,7 +74,6 @@ def query_gemini(prompt: str, key: str) -> str:
                 )
             )
 
-            # Replay recent context safely
             for turn in conversation_history[-4:]:
                 if turn["role"] == "user":
                     try:
@@ -96,7 +95,7 @@ def query_gemini(prompt: str, key: str) -> str:
     raise last_err or RuntimeError("Gemini models failed.")
 
 def query_groq(prompt: str) -> str:
-    """Fallback engine using your enabled Groq endpoints."""
+    """Fallback engine using verified endpoints from your Groq dashboard."""
     groq_key = os.getenv("GROQ_API_KEY")
     if not groq_key:
         raise RuntimeError("GROQ_API_KEY not set.")
@@ -157,7 +156,7 @@ def ask_ai_brain(prompt: str) -> str:
         except Exception as groq_err:
             print(f"Groq failover exception: {groq_err}")
 
-    return "Apologies Master, our cognitive links are temporarily rate-limited. Please allow 30 seconds."
+    return "Apologies Master, both primary and backup cognitive links are temporarily rate-limited. Please allow 30 seconds."
 
 def compute_route_and_distance(origin_str: str, dest_str: str) -> dict:
     try:
@@ -253,17 +252,17 @@ def search_live_web(query: str) -> str:
     return "Could not retrieve live search data right now."
 
 GREETING_RESPONSES = [
-    "Hey Master, what's good! All systems are primed and rolling.",
-    "Radio link online, Master! What are we diving into today?",
-    "Gibbon core active and locked in, Master. How can I help?",
-    "Good to see you, Master. Systems running smooth. What's on your mind?"
+    "Hello Master. Standing by for your instructions.",
+    "Systems are ready, Master. What can I do for you?",
+    "Gibbon online. How may I assist you today, Master?",
+    "Standing by, Master. What's on your agenda?"
 ]
 
 THINKING_PREFIXES = [
-    "Checking that for you right now, Master... ",
-    "On it, Master! ",
-    "Scanning the wire... ",
-    "Right away, Master! "
+    "Checking that now, Master... ",
+    "On it, Master. ",
+    "Looking that up... ",
+    "One moment, Master. "
 ]
 
 @app.get("/")
@@ -273,7 +272,7 @@ def serve_index():
 @app.post("/api/clear")
 def clear_conversation():
     reset_memory()
-    return {"reply": "Memory cleared, Master! Starting fresh."}
+    return {"reply": "Memory cleared, Master. Ready for a new directive."}
 
 @app.post("/api/chat")
 async def process_command(request: Request):
@@ -283,7 +282,7 @@ async def process_command(request: Request):
 
     if any(k in lower for k in ["clear history", "reset memory", "forget everything", "new conversation", "clear conversation"]):
         reset_memory()
-        return {"reply": "Memory matrix cleared, Master! We are back on a totally clean slate."}
+        return {"reply": "Memory cleared, Master. We are on a clean slate."}
 
     if any(greet in lower for greet in ["hello", "hi", "hey", "wake up", "good morning", "good evening"]):
         clean_check = re.sub(r"\b(gibbon|given|hey|hi|hello|good morning|good evening|good afternoon|wake up)\b", "", lower).strip()
@@ -310,11 +309,11 @@ async def process_command(request: Request):
 
             prefix = random.choice(THINKING_PREFIXES)
             reply_text = (
-                f"{prefix}Road distance from {nav['origin']} to {nav['destination']} "
-                f"is {nav['distance_km']} km. Travel time is around {nav['duration_hrs']} hours via {nav['key_route']}."
+                f"{prefix}The road distance from {nav['origin']} to {nav['destination']} "
+                f"is {nav['distance_km']} km. Travel time is approximately {nav['duration_hrs']} hours via {nav['key_route']}."
             )
             return {"reply": reply_text, "map_link": nav["map_url"]}
-        return {"reply": "Please tell me your origin and destination, Master. For example: 'Distance from Bangalore to Mysore'."}
+        return {"reply": "Please specify both the origin and destination, Master. Example: 'Distance from Bangalore to Mysore'."}
 
     elif "remind me to" in lower or "remind me" in lower:
         task = re.sub(r"\b(gibbon|given|remind me to|remind me)\b", "", lower).strip()
@@ -324,7 +323,7 @@ async def process_command(request: Request):
                   (task, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()
         conn.close()
-        return {"reply": f"Locked into your reminders queue, Master: '{task}'."}
+        return {"reply": f"Logged to your reminders, Master: '{task}'."}
 
     elif "reminders" in lower or "my plans" in lower or "schedule" in lower:
         conn = sqlite3.connect(DB_FILE)
@@ -334,25 +333,25 @@ async def process_command(request: Request):
         conn.close()
         if rows:
             tasks = ", ".join([r[0] for r in rows])
-            return {"reply": f"Here is your pending lineup, Master: {tasks}."}
-        return {"reply": "Your schedule is wide open right now, Master. No pending tasks."}
+            return {"reply": f"Your pending schedule, Master: {tasks}."}
+        return {"reply": "Your schedule is clear, Master. No pending tasks."}
 
     elif any(k in lower for k in ["generate image", "create an image", "draw", "make an image"]):
         prompt = re.sub(r"\b(gibbon|given|generate an image of|generate image of|create an image of|draw|make an image of)\b", "", lower).strip()
         filename = generate_free_image(prompt)
         if filename:
             return {
-                "reply": f"Visual render completed, Master! Output saved as {filename}.",
+                "reply": f"Visual synthesis complete, Master. Saved as {filename}.",
                 "media_type": "image",
                 "media_url": f"/media/{filename}"
             }
-        return {"reply": "Visual synthesis hit a snag. Let's try that again."}
+        return {"reply": "Image rendering encountered an issue. Please try again."}
 
     elif any(k in lower for k in ["ticket", "flight", "bus", "train", "fare", "cheap price", "compare"]):
         search_query = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
         search_summary = search_live_web(f"{search_query} fare price booking")
         prefix = random.choice(THINKING_PREFIXES)
-        return {"reply": f"{prefix}Here's what the live radar found: {search_summary[:280]}..."}
+        return {"reply": f"{prefix}Here is the latest fare info: {search_summary[:280]}..."}
 
     clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
     ai_answer = ask_ai_brain(clean_prompt or raw_message)
@@ -361,12 +360,12 @@ async def process_command(request: Request):
 @app.get("/api/tts")
 async def text_to_speech(text: str):
     spoken_text = text[:320]
-    # Indian English male RJ presenter voice
+    # Natural, grounded real male voice
     communicate = edge_tts.Communicate(
         spoken_text, 
-        voice="en-IN-PrabhatNeural", 
-        rate="+3%", 
-        pitch="-1Hz",
+        voice="en-US-BrianNeural", 
+        rate="+0%", 
+        pitch="+0Hz",
         volume="+0%"
     )
     audio_data = bytearray()
