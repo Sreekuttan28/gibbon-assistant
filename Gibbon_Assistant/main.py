@@ -50,7 +50,7 @@ chat_session = None
 ai_client = None
 
 def init_chat_session():
-    """Initializes the multi-turn session with model fallback protection."""
+    """Initializes the multi-turn session with the active Gemini 3 model."""
     global chat_session, ai_client
     current_key = os.getenv("GEMINI_API_KEY")
     if not current_key:
@@ -65,8 +65,8 @@ def init_chat_session():
         chat_session = None
         return f"Client creation error: {str(e)}"
 
-    # Try preferred modern models with fallback
-    candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash"]
+    # Use the active Gemini 3 series models
+    candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
     last_err = None
 
     for model_name in candidate_models:
