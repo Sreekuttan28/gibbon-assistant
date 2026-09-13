@@ -16,7 +16,7 @@ from google.genai import types
 from groq import Groq
 import edge_tts
 
-app = FastAPI(title="GIBBON AKA ASSISTANT")
+app = FastAPI(title="GIBBON // MOKUTTAN LABS")
 
 MEDIA_DIR = "saved_media"
 DB_FILE = "assistant.db"
@@ -25,7 +25,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v13")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v16")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -41,11 +41,15 @@ def init_db():
 
 init_db()
 
-SYSTEM_INSTRUCTION = (
-    "You are Gibbon, a calm, grounded, and dependable male personal AI assistant modeled after JARVIS. "
-    "Always address the user as Master. Keep answers natural, intelligent, direct, and under 3 sentences. "
-    "Crucially, maintain context of earlier questions, recommendations, and conversation history."
-)
+def get_dynamic_system_instruction() -> str:
+    now_str = datetime.now().strftime("%A, %B %d, %Y at %I:%M %p")
+    return (
+        "You are Gibbon, a crisp, polite, modern, and intelligent female personal AI assistant modeled after Siri. "
+        "Engineered and deployed by Mokuttan Labs. Always address the user as Chief. "
+        "Keep answers natural, bright, concise, and under 3 sentences. "
+        f"The current real-world date and time is {now_str}. "
+        "Maintain context of earlier questions, recommendations, and conversation history."
+    )
 
 def get_gemini_keys():
     keys_str = os.getenv("GEMINI_API_KEYS") or os.getenv("GEMINI_API_KEY") or ""
@@ -59,7 +63,7 @@ def reset_memory():
     conversation_history = []
 
 def query_gemini(prompt: str, key: str) -> str:
-    """Queries Gemini 3 series using chats.create with live search tools."""
+    """Queries Gemini 3 series using chats.create with live search tools and live timestamp grounding."""
     client = genai.Client(api_key=key)
     candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
     last_err = None
@@ -69,7 +73,7 @@ def query_gemini(prompt: str, key: str) -> str:
             chat = client.chats.create(
                 model=m,
                 config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_INSTRUCTION,
+                    system_instruction=get_dynamic_system_instruction(),
                     tools=[{"google_search": {}}]
                 )
             )
@@ -101,7 +105,7 @@ def query_groq(prompt: str) -> str:
         raise RuntimeError("GROQ_API_KEY not set.")
 
     client = Groq(api_key=groq_key)
-    messages = [{"role": "system", "content": SYSTEM_INSTRUCTION}]
+    messages = [{"role": "system", "content": get_dynamic_system_instruction()}]
     for turn in conversation_history[-4:]:
         messages.append({"role": turn["role"], "content": turn["content"]})
     messages.append({"role": "user", "content": prompt})
@@ -156,7 +160,7 @@ def ask_ai_brain(prompt: str) -> str:
         except Exception as groq_err:
             print(f"Groq failover exception: {groq_err}")
 
-    return "Apologies Master, both primary and backup cognitive links are temporarily rate-limited. Please allow 30 seconds."
+    return "Apologies Chief, both primary and backup cognitive links are temporarily rate-limited. Please allow 30 seconds."
 
 def compute_route_and_distance(origin_str: str, dest_str: str) -> dict:
     try:
@@ -202,7 +206,7 @@ def get_live_forecast(city_name: str) -> str:
     try:
         loc = geolocator.geocode(city_name, timeout=10)
         if not loc:
-            return f"Master, I could not pinpoint coordinates for {city_name}."
+            return f"Chief, I could not pinpoint coordinates for {city_name}."
 
         url = (
             f"https://api.open-meteo.com/v1/forecast?"
@@ -224,7 +228,7 @@ def get_live_forecast(city_name: str) -> str:
             f"Today's forecast peaks at {max_t}°C with a low of {min_t}°C."
         )
     except Exception as e:
-        return "Telemetry failed to fetch live weather metrics, Master."
+        return "Telemetry failed to fetch live weather metrics, Chief."
 
 def generate_free_image(prompt: str) -> str:
     try:
@@ -252,17 +256,17 @@ def search_live_web(query: str) -> str:
     return "Could not retrieve live search data right now."
 
 GREETING_RESPONSES = [
-    "Hello Master. Standing by for your instructions.",
-    "Systems are ready, Master. What can I do for you?",
-    "Gibbon online. How may I assist you today, Master?",
-    "Standing by, Master. What's on your agenda?"
+    "Hello Chief. Mokuttan Labs core online. Standing by for instructions.",
+    "Systems nominal, Chief. Mokuttan Labs engine ready.",
+    "Gibbon online. How may I assist you today, Chief?",
+    "Ready when you are, Chief. Mokuttan Labs systems active."
 ]
 
 THINKING_PREFIXES = [
-    "Checking that now, Master... ",
-    "On it, Master. ",
-    "Looking that up... ",
-    "One moment, Master. "
+    "Checking that now, Chief... ",
+    "On it, Chief. ",
+    "Looking that up for you... ",
+    "One moment, Chief. "
 ]
 
 @app.get("/")
@@ -272,7 +276,7 @@ def serve_index():
 @app.post("/api/clear")
 def clear_conversation():
     reset_memory()
-    return {"reply": "Memory cleared, Master. Ready for a new directive."}
+    return {"reply": "Memory cleared, Chief. Ready for a new directive."}
 
 @app.post("/api/chat")
 async def process_command(request: Request):
@@ -280,9 +284,17 @@ async def process_command(request: Request):
     raw_message = data.get("message", "").strip()
     lower = raw_message.lower()
 
+    if any(k in lower for k in ["what time is it", "current time", "what's the time", "tell me the time"]):
+        now_time = datetime.now().strftime("%I:%M %p")
+        return {"reply": f"The current time is {now_time}, Chief."}
+
+    if any(k in lower for k in ["what date is it", "today's date", "what is the date", "what day is today", "what's the date"]):
+        now_date = datetime.now().strftime("%A, %B %d, %Y")
+        return {"reply": f"Today is {now_date}, Chief."}
+
     if any(k in lower for k in ["clear history", "reset memory", "forget everything", "new conversation", "clear conversation"]):
         reset_memory()
-        return {"reply": "Memory cleared, Master. We are on a clean slate."}
+        return {"reply": "Memory cleared, Chief. We are on a clean slate."}
 
     if any(greet in lower for greet in ["hello", "hi", "hey", "wake up", "good morning", "good evening"]):
         clean_check = re.sub(r"\b(gibbon|given|hey|hi|hello|good morning|good evening|good afternoon|wake up)\b", "", lower).strip()
@@ -313,7 +325,7 @@ async def process_command(request: Request):
                 f"is {nav['distance_km']} km. Travel time is approximately {nav['duration_hrs']} hours via {nav['key_route']}."
             )
             return {"reply": reply_text, "map_link": nav["map_url"]}
-        return {"reply": "Please specify both the origin and destination, Master. Example: 'Distance from Bangalore to Mysore'."}
+        return {"reply": "Please specify both the origin and destination, Chief. Example: 'Distance from Bangalore to Mysore'."}
 
     elif "remind me to" in lower or "remind me" in lower:
         task = re.sub(r"\b(gibbon|given|remind me to|remind me)\b", "", lower).strip()
@@ -323,7 +335,7 @@ async def process_command(request: Request):
                   (task, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()
         conn.close()
-        return {"reply": f"Logged to your reminders, Master: '{task}'."}
+        return {"reply": f"Logged to your reminders, Chief: '{task}'."}
 
     elif "reminders" in lower or "my plans" in lower or "schedule" in lower:
         conn = sqlite3.connect(DB_FILE)
@@ -333,15 +345,15 @@ async def process_command(request: Request):
         conn.close()
         if rows:
             tasks = ", ".join([r[0] for r in rows])
-            return {"reply": f"Your pending schedule, Master: {tasks}."}
-        return {"reply": "Your schedule is clear, Master. No pending tasks."}
+            return {"reply": f"Your pending schedule, Chief: {tasks}."}
+        return {"reply": "Your schedule is clear, Chief. No pending tasks."}
 
     elif any(k in lower for k in ["generate image", "create an image", "draw", "make an image"]):
         prompt = re.sub(r"\b(gibbon|given|generate an image of|generate image of|create an image of|draw|make an image of)\b", "", lower).strip()
         filename = generate_free_image(prompt)
         if filename:
             return {
-                "reply": f"Visual synthesis complete, Master. Saved as {filename}.",
+                "reply": f"Visual synthesis complete, Chief. Saved as {filename}.",
                 "media_type": "image",
                 "media_url": f"/media/{filename}"
             }
@@ -360,12 +372,11 @@ async def process_command(request: Request):
 @app.get("/api/tts")
 async def text_to_speech(text: str):
     spoken_text = text[:320]
-    # Natural, grounded real male voice
     communicate = edge_tts.Communicate(
         spoken_text, 
-        voice="en-US-BrianNeural", 
-        rate="+0%", 
-        pitch="+0Hz",
+        voice="en-US-JennyNeural", 
+        rate="+2%", 
+        pitch="+1Hz",
         volume="+0%"
     )
     audio_data = bytearray()
