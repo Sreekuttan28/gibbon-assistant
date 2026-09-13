@@ -16,12 +16,9 @@ import edge_tts
 
 app = FastAPI(title="GIBBON AKA ASSISTANT")
 
-# ==================== CONFIGURATION ====================
+# Render environment variable
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 ai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
-# =======================================================
-
-ai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE" else None
 
 MEDIA_DIR = "saved_media"
 DB_FILE = "assistant.db"
@@ -46,65 +43,77 @@ def init_db():
 
 init_db()
 
-# --- Continuous Chat Session Memory ---
-
 SYSTEM_INSTRUCTION = (
-    "You are Gibbon, a brilliant, witty, and loyal personal AI assistant modeled after JARVIS. "
-    "Always address the user as Master. Keep answers crisp, natural, intelligent, and under 3 sentences. "
-    "Crucially, maintain context of earlier questions, movie/book recommendations, and conversation history."
+    "You are Gibbon, a gentle, intelligent, and loyal personal AI assistant modeled after JARVIS. "
+    "Always address the user as Master. Keep answers soft, natural, intelligent, and under 3 sentences. "
+    "Crucially, maintain context of earlier questions, recommendations, and conversation history."
 )
 
 chat_session = None
 
 def init_chat_session():
-    global chat_session
+    """Initializes the multi-turn session and dynamically refreshes the client if needed."""
+    global chat_session, ai_client
+    current_key = os.getenv("GEMINI_API_KEY")
+    
+    if current_key and (ai_client is None or getattr(ai_client, "api_key", None) != current_key):
+        try:
+            ai_client = genai.Client(api_key=current_key)
+        except Exception as e:
+            print(f"Error creating GenAI client: {e}")
+            ai_client = None
+
     if ai_client:
         try:
             chat_session = ai_client.chats.create(
-                model="gemini-3.6-flash",
+                model="gemini-2.5-flash",
                 config={"system_instruction": SYSTEM_INSTRUCTION}
             )
-            print("Chat session initialized with conversation memory.")
+            print("Chat session successfully initialized.")
         except Exception as e:
-            print(f"Chat session init error: {e}")
+            print(f"Chat session creation error: {e}")
+            chat_session = None
 
 init_chat_session()
 
 GREETING_RESPONSES = [
-    "Hey Master, welcome back! Gibbon neural link primed and standing by.",
-    "Online at your command, Master. What directive are we tackling today?",
-    "Gibbon core initialized, Master. How may I be of service?",
+    "Hey Master, welcome back. All systems are serene and standing by.",
+    "Online at your command, Master. What would you like to explore today?",
+    "Gibbon core initialized, Master. How may I assist you?",
     "Good to see you, Master. Systems check out clean. What's on your mind?"
 ]
 
 THINKING_PREFIXES = [
-    "Pulling telemetry now, Master... ",
+    "Checking that for you, Master... ",
     "On it, Master. ",
     "Scanning the data stream... ",
     "Right away, Master. "
 ]
 
-# --- Helper Modules ---
-
 def ask_ai_brain(prompt: str) -> str:
-    """Multi-turn memory query using the persistent chat session."""
-    global chat_session
-    if not ai_client:
-        return "Master, please set your GEMINI_API_KEY in main.py to activate my cognitive engine."
+    """Answers using multi-turn memory with automatic reconnect fallback."""
+    global chat_session, ai_client
+    
+    if not os.getenv("GEMINI_API_KEY"):
+        return "Master, please set your GEMINI_API_KEY in Render's Environment settings."
 
     if chat_session is None:
         init_chat_session()
+
+    if chat_session is None:
+        return "Master, my cognitive engine could not authenticate. Please verify your GEMINI_API_KEY value."
 
     try:
         response = chat_session.send_message(prompt)
         return response.text.strip()
     except Exception as e:
-        print(f"Chat memory error: {e}")
+        print(f"Chat memory runtime exception: {e}")
         try:
             init_chat_session()
             response = chat_session.send_message(prompt)
             return response.text.strip()
-        except Exception:
+        except Exception as retry_err:
+            print(f"Retry failed: {retry_err}")
             return "Apologies Master, my memory buffer experienced a brief reset. Could you ask once more?"
 
 def compute_route_and_distance(origin_str: str, dest_str: str) -> dict:
@@ -149,7 +158,7 @@ def compute_route_and_distance(origin_str: str, dest_str: str) -> dict:
         return {"error": str(e)}
 
 def get_live_forecast(city_name: str) -> str:
-    """Fetches real-time weather and forecast via Open-Meteo (free, no key)."""
+    """Fetches real-time weather and forecast via Open-Meteo."""
     try:
         loc = geolocator.geocode(city_name, timeout=10)
         if not loc:
@@ -204,8 +213,6 @@ def search_live_web(query: str) -> str:
     except Exception as e:
         print(f"Search error: {e}")
     return "Could not retrieve live search data right now."
-
-# --- API Endpoints ---
 
 @app.get("/")
 def serve_index():
@@ -297,20 +304,20 @@ async def process_command(request: Request):
         prefix = random.choice(THINKING_PREFIXES)
         return {"reply": f"{prefix}Here is the latest fare info: {search_summary[:280]}..."}
 
-    # 8. General Knowledge & Follow-ups (Continuous Chat Memory)
+    # 8. General Knowledge & Follow-ups
     clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
     ai_answer = ask_ai_brain(clean_prompt or raw_message)
     return {"reply": ai_answer}
 
 @app.get("/api/tts")
 async def text_to_speech(text: str):
-    # 'en-GB-RyanNeural' delivers a smooth, calm JARVIS-style tone
-    # rate="-4%" softens cadence; volume="-15%" lowers sharp vocal punch
+    # Gentle, soft, and quiet British vocal profile
     communicate = edge_tts.Communicate(
         text, 
-        voice="en-GB-RyanNeural", 
-        rate="-4%", 
-        volume="-15%"
+        voice="en-GB-LibbyNeural", 
+        rate="-6%", 
+        pitch="-3Hz",
+        volume="-20%"
     )
     audio_data = bytearray()
     async for chunk in communicate.stream():
