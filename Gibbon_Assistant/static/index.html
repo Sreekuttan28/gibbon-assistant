@@ -324,7 +324,6 @@
       color: #030712;
     }
 
-    /* SETTINGS MODAL */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -782,7 +781,6 @@
       to { transform: rotate(0deg); }
     }
 
-    /* ACCORDION USER QUESTION CARD (MINIMIZABLE WITH FLUID SPRING ANIMATION) */
     .user-question-card {
       width: 100%;
       background: rgba(15, 23, 42, 0.82);
@@ -850,7 +848,6 @@
       overflow-y: auto;
     }
 
-    /* GIBBON RESPONSE HUD CARD */
     .hud-card {
       width: 100%;
       background: var(--panel);
@@ -1000,7 +997,6 @@
       color: var(--primary);
     }
 
-    /* FOOTER & EXPANDING INPUT DOCK */
     .hud-footer {
       width: 100%;
       max-width: 680px;
@@ -1039,7 +1035,6 @@
       position: relative;
     }
 
-    /* Auto-resizing textarea with spring transition */
     .dock-pill-container textarea {
       width: 100%;
       min-height: 24px;
@@ -1155,7 +1150,6 @@
       background: #1d4ed8;
     }
 
-    /* DISCLAIMER NOTICE */
     .disclaimer-text {
       font-size: 0.68rem;
       color: #64748b;
@@ -1194,7 +1188,6 @@
 
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-  <!-- Settings & Profile Modal -->
   <div class="modal-overlay" id="settingsModal">
     <div class="settings-card">
       <div class="settings-title">
@@ -1337,7 +1330,6 @@
         </div>
       </div>
 
-      <!-- ACCORDION USER QUESTION CARD (2-line preview or fully expanded) -->
       <div class="user-question-card" id="userQuestionCard">
         <div class="question-header" id="questionHeader" onclick="toggleQuestionExpand()">
           <div class="question-badge">
@@ -1349,7 +1341,6 @@
         <div class="question-body" id="questionBody"></div>
       </div>
 
-      <!-- GIBBON RESPONSE HUD CARD -->
       <div class="hud-card">
         <div class="log-speaker">
           <span id="speakerLabel">MOKUTTAN LABS</span>
@@ -1369,7 +1360,7 @@
       </div>
 
       <div class="quick-chips">
-        <div class="chip" onclick="sendDirective('Weather forecast for Bangalore')">⚡ Weather</div>
+        <div class="chip" onclick="sendDirective('Weather forecast for Bengaluru')">⚡ Weather</div>
         <div class="chip" onclick="sendDirective('What is the current date and time')">📅 Date & Time</div>
         <div class="chip" onclick="sendDirective('What are my reminders')">📋 Reminders</div>
         <div class="chip" onclick="startNewSession()">🧹 Clear</div>
@@ -1378,7 +1369,6 @@
 
     <footer class="hud-footer">
       <div class="dock-pill-container" id="dockContainer">
-        <!-- Maximize / Expand button on the left -->
         <button class="icon-action-btn" id="expandToggleBtn" onclick="toggleInputMaximize()" title="Expand or shrink input box">
           <svg viewBox="0 0 24 24">
             <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
@@ -1409,7 +1399,6 @@
         </div>
       </div>
 
-      <!-- Gibbon AI can make mistakes disclaimer -->
       <div class="disclaimer-text">
         <span>Gibbon AI</span> can make mistakes. Verify important facts & calculations.
       </div>
@@ -1521,7 +1510,6 @@
       triggerLuffyAction(`Hey ${currentUserName}!`);
     }
 
-    // AUTO-RESIZING & MANUAL EXPANDING INPUT TEXTAREA
     function adjustTextareaHeight() {
       if (!dockContainer.classList.contains('maximized')) {
         hudInput.style.height = 'auto';
@@ -1546,7 +1534,6 @@
       hudInput.focus();
     }
 
-    // ACCORDION QUESTION EXPAND / COLLAPSE
     let isQuestionExpanded = false;
     function toggleQuestionExpand() {
       isQuestionExpanded = !isQuestionExpanded;
@@ -1565,7 +1552,6 @@
       questionBody.classList.remove('expanded');
       isQuestionExpanded = false;
 
-      // Only show toggle button if text is long enough to overflow 2 lines
       setTimeout(() => {
         if (questionBody.scrollHeight > 45) {
           questionToggleBtn.style.display = 'inline-block';
@@ -1773,7 +1759,19 @@
         return;
       }
 
-      const cleanText = text.replace(/[*#_`"]/g, '').trim();
+      // Strip markdown symbols, pipes, code fences, bullets, and dashes for clear voice output
+      const cleanVoiceText = text
+        .replace(/```[\s\S]*?```/g, ' ')
+        .replace(/\|/g, ' ')
+        .replace(/[*#_`~>—–-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!cleanVoiceText) {
+        onComplete();
+        return;
+      }
+
       setLuffyState('focused');
 
       if (currentAudio) {
@@ -1781,7 +1779,7 @@
         currentAudio = null;
       }
 
-      currentAudio = new Audio(`/api/tts?text=${encodeURIComponent(cleanText)}`);
+      currentAudio = new Audio(`/api/tts?text=${encodeURIComponent(cleanVoiceText)}`);
       
       currentAudio.play().catch(err => {
         console.warn("Audio playback notice:", err);
@@ -1816,7 +1814,6 @@
 
       displayUserQuestion(command);
 
-      // Reset textarea height and collapse maximize container
       hudInput.value = '';
       dockContainer.classList.remove('maximized');
       hudInput.style.height = '24px';
@@ -1887,7 +1884,6 @@
     });
 
     hudInput.addEventListener('keydown', (e) => {
-      // Enter without Shift sends the message
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         const val = hudInput.value.trim();
