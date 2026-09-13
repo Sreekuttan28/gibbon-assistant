@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+edge-tts
+python-multipart
+requests
+geopy
+duckduckgo-search

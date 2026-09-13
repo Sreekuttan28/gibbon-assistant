@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>GIBBON AKA ASSISTANT</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23030712' stroke='%2300f0ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='32' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-dasharray='6 4'/%3E%3Ccircle cx='50' cy='50' r='18' fill='%2300f0ff' opacity='0.85'/%3E%3Cpath d='M50 12 L50 24 M50 76 L50 88 M12 50 L24 50 M76 50 L88 50' stroke='%2300f0ff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #00f0ff;
+      --primary-glow: rgba(0, 240, 255, 0.45);
+      --accent: #ff0055;
+      --accent-glow: rgba(255, 0, 85, 0.5);
+      --bg: #030712;
+      --panel: rgba(15, 23, 42, 0.75);
+      --border: rgba(0, 240, 255, 0.22);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 50% 12%, rgba(0, 240, 255, 0.12) 0%, transparent 65%),
+        radial-gradient(circle at 85% 85%, rgba(255, 0, 85, 0.08) 0%, transparent 55%),
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      color: #f1f5f9;
+      font-family: 'Rajdhani', sans-serif;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1rem calc(1.2rem + env(safe-area-inset-bottom));
+      overflow-x: hidden;
+    }
+
+    /* Ambient Scanline */
+    body::before {
+      content: " ";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 3px;
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    /* Header & Telemetry Grid */
+    header {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .hud-header-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0.8rem;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.75rem;
+      letter-spacing: 1.5px;
+      color: #94a3b8;
+    }
+
+    .telemetry-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--primary);
+      animation: blink 1.6s infinite ease-in-out;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.3; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    .hud-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #fff;
+      text-shadow: 0 0 12px var(--primary), 0 0 25px var(--primary-glow);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.2rem;
+    }
+
+    .hud-title span {
+      color: var(--primary);
+    }
+
+    /* Main Console */
+    main {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.9rem;
+      flex: 1;
+      justify-content: center;
+      margin: 0.5rem 0;
+    }
+
+    /* Arc Reactor Core */
+    .reactor-wrap {
+      position: relative;
+      width: 175px;
+      height: 175px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ring-outer {
+      position: absolute;
+      inset: 0;
+      border: 2px dashed var(--primary);
+      border-radius: 50%;
+      opacity: 0.45;
+      animation: rotateRing 24s linear infinite;
+    }
+
+    .ring-middle {
+      position: absolute;
+      inset: 12px;
+      border: 1px solid transparent;
+      border-left: 2px solid var(--primary);
+      border-right: 2px solid var(--primary);
+      border-radius: 50%;
+      animation: rotateRingRev 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    .ring-glow-pulse {
+      position: absolute;
+      inset: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+      opacity: 0.4;
+      animation: corePulse 3s infinite ease-in-out;
+    }
+
+    @keyframes rotateRing { 100% { transform: rotate(360deg); } }
+    @keyframes rotateRingRev { 100% { transform: rotate(-360deg); } }
+    @keyframes corePulse {
+      0%, 100% { transform: scale(0.95); opacity: 0.3; }
+      50% { transform: scale(1.1); opacity: 0.6; }
+    }
+
+    .reactor-btn {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #0e243d 30%, #030712 100%);
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 25px var(--primary-glow), inset 0 0 15px var(--primary-glow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .reactor-btn svg {
+      width: 38px;
+      height: 38px;
+      fill: var(--primary);
+      filter: drop-shadow(0 0 8px var(--primary));
+      transition: all 0.3s ease;
+    }
+
+    .reactor-btn.listening {
+      border-color: var(--accent);
+      box-shadow: 0 0 35px var(--accent-glow), inset 0 0 20px var(--accent-glow);
+      animation: coreVibe 1s infinite alternate ease-in-out;
+    }
+
+    .reactor-btn.listening svg {
+      fill: var(--accent);
+      filter: drop-shadow(0 0 12px var(--accent));
+      transform: scale(1.1);
+    }
+
+    @keyframes coreVibe {
+      from { transform: scale(1); }
+      to { transform: scale(1.05); }
+    }
+
+    .live-hearing {
+      font-size: 0.88rem;
+      color: var(--primary);
+      letter-spacing: 1px;
+      min-height: 1.4rem;
+      text-align: center;
+      font-style: italic;
+    }
+
+    /* Equalizer Visualizer */
+    .wave-box {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 22px;
+    }
+
+    .wave-bar {
+      width: 3px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+      transition: height 0.1s ease;
+      box-shadow: 0 0 6px var(--primary);
+    }
+
+    /* Holographic Main Card */
+    .hud-card {
+      width: 100%;
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      position: relative;
+    }
+
+    .hud-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 10%; width: 80%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    }
+
+    .log-speaker {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      color: var(--primary);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .log-content {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+      min-height: 52px;
+    }
+
+    .media-holder {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 0.8rem;
+      border: 1px solid var(--border);
+      display: none;
+    }
+
+    .media-holder img {
+      width: 100%;
+      height: auto;
+      max-height: 280px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .hud-btn {
+      display: none;
+      width: 100%;
+      margin-top: 0.85rem;
+      padding: 0.85rem;
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 1.5px;
+      font-weight: 700;
+      text-align: center;
+      border-radius: 8px;
+      text-decoration: none;
+      text-transform: uppercase;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    /* Quick Directive Chips */
+    .quick-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .chip {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      color: #94a3b8;
+      font-size: 0.78rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chip:hover, .chip:active {
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Footer Command Input */
+    .hud-footer {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .hud-input-row {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.4rem 0.5rem 0.4rem 1rem;
+      align-items: center;
+    }
+
+    .hud-input-row input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.05rem;
+      outline: none;
+    }
+
+    .hud-input-row input::placeholder {
+      color: #475569;
+    }
+
+    .send-trigger {
+      padding: 0.7rem 1.3rem;
+      border-radius: 8px;
+      background: var(--primary);
+      border: none;
+      color: #030712;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 0 15px var(--primary-glow);
+      transition: transform 0.15s ease;
+    }
+
+    .send-trigger:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="hud-header-bar">
+      <div class="telemetry-chip">
+        <span class="pulse-dot"></span>
+        <span id="telemetryStatus">CORE: STANDBY</span>
+      </div>
+      <div id="liveClock">00:00:00 UTC</div>
+      <div class="telemetry-chip">
+        <span>LATENCY: </span><span id="pingValue" style="color:var(--primary);">12ms</span>
+      </div>
+    </div>
+    <div class="hud-title">GIBBON <span>AKA</span> ASSISTANT</div>
+  </header>
+
+  <main>
+    <div class="reactor-wrap">
+      <div class="ring-outer"></div>
+      <div class="ring-middle"></div>
+      <div class="ring-glow-pulse"></div>
+      <button class="reactor-btn" id="micBtn" aria-label="Reactor Core">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="live-hearing" id="liveHearing">Tap reactor once to link neural microphone</div>
+
+    <div class="wave-box" id="waveBox">
+      <div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div>
+    </div>
+
+    <div class="hud-card">
+      <div class="log-speaker">
+        <span id="speakerLabel">FEEDBACK MATRIX</span>
+        <span id="timestamp">SYS: ACTIVE</span>
+      </div>
+      <div class="log-content" id="logContent">
+        "Tap the reactor core once to initiate voice protocols, Master. I will remember our discussion and follow your directives seamlessly."
+      </div>
+      <div class="media-holder" id="mediaHolder"></div>
+      <a href="#" target="_blank" class="hud-btn" id="navBtn">Open Plotted Coordinates</a>
+    </div>
+
+    <div class="quick-chips">
+      <div class="chip" onclick="sendDirective('Weather forecast for Bangalore')">⚡ Weather</div>
+      <div class="chip" onclick="sendDirective('Distance from Bangalore to Mysore')">📍 Route to Mysore</div>
+      <div class="chip" onclick="sendDirective('What are my reminders')">📋 Reminders</div>
+      <div class="chip" onclick="sendDirective('Recommend a top rated sci-fi movie')">🎬 Movie Rec</div>
+      <div class="chip" onclick="sendDirective('Clear memory')">🧹 Reset Memory</div>
+    </div>
+  </main>
+
+  <footer class="hud-footer">
+    <div class="hud-input-row">
+      <input type="text" id="hudInput" placeholder="Enter directive or say 'Hey Gibbon'..." />
+      <button class="send-trigger" id="sendBtn">EXEC</button>
+    </div>
+  </footer>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js');
+    }
+
+    // Live Clock Display
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('liveClock').textContent = now.toTimeString().split(' ')[0] + ' IST';
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    const micBtn = document.getElementById('micBtn');
+    const telemetryStatus = document.getElementById('telemetryStatus');
+    const logContent = document.getElementById('logContent');
+    const speakerLabel = document.getElementById('speakerLabel');
+    const mediaHolder = document.getElementById('mediaHolder');
+    const navBtn = document.getElementById('navBtn');
+    const hudInput = document.getElementById('hudInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const waveBars = document.querySelectorAll('.wave-bar');
+    const liveHearing = document.getElementById('liveHearing');
+    const pingValue = document.getElementById('pingValue');
+
+    const wakeAliases = ["gibbon", "given", "gibons", "gibin", "gabon", "kiban", "gibson"];
+    let waveInterval;
+    let isListening = false;
+    let awaitingDirective = false;
+    let silenceTimer = null;
+    let accumulatedDirective = "";
+
+    function animateWaves(active) {
+      if (active) {
+        waveInterval = setInterval(() => {
+          waveBars.forEach(b => {
+            b.style.height = `${Math.floor(Math.random() * 18) + 4}px`;
+          });
+        }, 110);
+      } else {
+        clearInterval(waveInterval);
+        waveBars.forEach(b => b.style.height = '4px');
+      }
+    }
+
+    async function sendDirective(command) {
+      if (!command || command.trim().length < 2) return;
+
+      const t0 = performance.now();
+      telemetryStatus.textContent = "CORE: SYNCHRONIZING";
+      speakerLabel.textContent = "MASTER DIRECTIVE";
+      logContent.textContent = `"${command}"`;
+      liveHearing.textContent = "";
+      navBtn.style.display = "none";
+      animateWaves(true);
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: command })
+        });
+        const data = await res.json();
+        
+        const latency = Math.round(performance.now() - t0);
+        pingValue.textContent = `${latency}ms`;
+
+        speakerLabel.textContent = "GIBBON CORE";
+        logContent.textContent = data.reply;
+
+        if (data.media_url) {
+          mediaHolder.style.display = "block";
+          mediaHolder.innerHTML = `<img src="${data.media_url}" alt="Telemetry Output" />`;
+        }
+
+        if (data.map_link) {
+          navBtn.style.display = "block";
+          navBtn.href = data.map_link;
+        }
+
+        const audio = new Audio(`/api/tts?text=${encodeURIComponent(data.reply)}`);
+        audio.play();
+        audio.onended = () => {
+          animateWaves(false);
+          awaitingDirective = false;
+          accumulatedDirective = "";
+          micBtn.classList.remove('listening');
+          telemetryStatus.textContent = "CORE: STANDBY (SAY 'HEY GIBBON')";
+          liveHearing.textContent = "Listening for 'Hey Gibbon'...";
+        };
+      } catch (err) {
+        animateWaves(false);
+        awaitingDirective = false;
+        micBtn.classList.remove('listening');
+        telemetryStatus.textContent = "LINK ANOMALY";
+        logContent.textContent = "Neural connection lost. Confirm Python backend is active.";
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const val = hudInput.value.trim();
+      if (val) {
+        sendDirective(val);
+        hudInput.value = '';
+      }
+    });
+
+    hudInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendBtn.click();
+    });
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      const recognizer = new SpeechRecognition();
+      recognizer.continuous = true;
+      recognizer.interimResults = true;
+      recognizer.lang = 'en-US';
+
+      function startListeningLoop() {
+        try {
+          recognizer.start();
+          isListening = true;
+          telemetryStatus.textContent = "CORE: STANDBY (SAY 'HEY GIBBON')";
+          liveHearing.textContent = "Listening... say 'Hey Gibbon' to wake me.";
+        } catch (e) {}
+      }
+
+      recognizer.onend = () => {
+        if (isListening) {
+          setTimeout(() => {
+            try { recognizer.start(); } catch (e) {}
+          }, 300);
+        }
+      };
+
+      micBtn.addEventListener('click', () => {
+        if (!isListening) {
+          startListeningLoop();
+        } else {
+          awaitingDirective = true;
+          accumulatedDirective = "";
+          micBtn.classList.add('listening');
+          telemetryStatus.textContent = "CORE ACTIVE: SPEAK COMMAND";
+          liveHearing.textContent = "I'm listening, Master. Speak your command...";
+        }
+      });
+
+      recognizer.onresult = (event) => {
+        let interimText = '';
+        let finalized = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalized += ' ' + event.results[i][0].transcript;
+          } else {
+            interimText += event.results[i][0].transcript;
+          }
+        }
+
+        const heardTotal = (finalized + ' ' + interimText).trim().toLowerCase();
+        liveHearing.textContent = `Heard: "${heardTotal}"`;
+
+        if (!awaitingDirective) {
+          const triggered = wakeAliases.some(alias => heardTotal.includes(alias));
+          if (triggered) {
+            awaitingDirective = true;
+            micBtn.classList.add('listening');
+            telemetryStatus.textContent = "CORE ENGAGED: AWAITING DIRECTIVE";
+
+            for (const alias of wakeAliases) {
+              if (heardTotal.includes(alias)) {
+                accumulatedDirective = heardTotal.split(alias)[1].trim();
+                break;
+              }
+            }
+
+            try {
+              const ctx = new (window.AudioContext || window.webkitAudioContext)();
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+              osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+              gain.gain.setValueAtTime(0.2, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+              osc.start();
+              osc.stop(ctx.currentTime + 0.2);
+            } catch (e) {}
+
+            liveHearing.textContent = "Gibbon active! Speak your command...";
+          }
+        } else {
+          if (finalized.trim()) {
+            accumulatedDirective += ' ' + finalized.trim();
+          }
+
+          clearTimeout(silenceTimer);
+          silenceTimer = setTimeout(() => {
+            const finalCmd = (accumulatedDirective + ' ' + interimText).trim();
+            if (finalCmd.length > 1) {
+              let cleaned = finalCmd;
+              wakeAliases.forEach(alias => {
+                cleaned = cleaned.replace(new RegExp(`\\b${alias}\\b`, 'gi'), '').trim();
+              });
+              sendDirective(cleaned || finalCmd);
+            }
+          }, 1400);
+        }
+      };
+
+      recognizer.onerror = (event) => {
+        if (event.error === 'not-allowed') {
+          isListening = false;
+          micBtn.classList.remove('listening');
+          telemetryStatus.textContent = "MIC BLOCKED";
+          liveHearing.textContent = "Microphone access blocked. Check browser settings.";
+        }
+      };
+    } else {
+      micBtn.style.display = 'none';
+      telemetryStatus.textContent = "BROWSER UNSUPPORTED";
+      liveHearing.textContent = "Speech API unsupported. Use Chrome, Edge, or Safari.";
+    }
+  </script>
+</body>
+</html>
