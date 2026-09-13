@@ -25,7 +25,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v16")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v17")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -44,9 +44,9 @@ init_db()
 def get_dynamic_system_instruction() -> str:
     now_str = datetime.now().strftime("%A, %B %d, %Y at %I:%M %p")
     return (
-        "You are Gibbon, a crisp, polite, modern, and intelligent female personal AI assistant modeled after Siri. "
+        "You are Gibbon, a bright, melodic, and intelligent personal AI assistant with a natural human female voice. "
         "Engineered and deployed by Mokuttan Labs. Always address the user as Chief. "
-        "Keep answers natural, bright, concise, and under 3 sentences. "
+        "Keep answers warm, clear, conversational, and under 3 sentences. "
         f"The current real-world date and time is {now_str}. "
         "Maintain context of earlier questions, recommendations, and conversation history."
     )
@@ -63,7 +63,6 @@ def reset_memory():
     conversation_history = []
 
 def query_gemini(prompt: str, key: str) -> str:
-    """Queries Gemini 3 series using chats.create with live search tools and live timestamp grounding."""
     client = genai.Client(api_key=key)
     candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
     last_err = None
@@ -99,7 +98,6 @@ def query_gemini(prompt: str, key: str) -> str:
     raise last_err or RuntimeError("Gemini models failed.")
 
 def query_groq(prompt: str) -> str:
-    """Fallback engine using verified endpoints from your Groq dashboard."""
     groq_key = os.getenv("GROQ_API_KEY")
     if not groq_key:
         raise RuntimeError("GROQ_API_KEY not set.")
@@ -136,7 +134,6 @@ def ask_ai_brain(prompt: str) -> str:
     global gemini_key_index, conversation_history
     gemini_keys = get_gemini_keys()
 
-    # 1. Attempt Gemini 3 with key rotation
     if gemini_keys:
         for _ in range(len(gemini_keys)):
             current_key = gemini_keys[gemini_key_index]
@@ -149,7 +146,6 @@ def ask_ai_brain(prompt: str) -> str:
                 print(f"Gemini key {gemini_key_index + 1} exhausted: {e}")
                 gemini_key_index = (gemini_key_index + 1) % len(gemini_keys)
 
-    # 2. Seamless failover to Groq
     if os.getenv("GROQ_API_KEY"):
         try:
             print("Routing to Groq failover engine...")
@@ -256,10 +252,10 @@ def search_live_web(query: str) -> str:
     return "Could not retrieve live search data right now."
 
 GREETING_RESPONSES = [
-    "Hello Chief. Mokuttan Labs core online. Standing by for instructions.",
-    "Systems nominal, Chief. Mokuttan Labs engine ready.",
+    "Hello Chief! Mokuttan Labs core is online. What can I do for you today?",
+    "Systems are ready, Chief. Mokuttan Labs standing by for your instructions.",
     "Gibbon online. How may I assist you today, Chief?",
-    "Ready when you are, Chief. Mokuttan Labs systems active."
+    "Ready when you are, Chief! What's on your mind?"
 ]
 
 THINKING_PREFIXES = [
@@ -371,18 +367,31 @@ async def process_command(request: Request):
 
 @app.get("/api/tts")
 async def text_to_speech(text: str):
-    spoken_text = text[:320]
-    communicate = edge_tts.Communicate(
-        spoken_text, 
-        voice="en-US-JennyNeural", 
-        rate="+2%", 
-        pitch="+1Hz",
-        volume="+0%"
-    )
+    spoken_text = text[:360]
+    # AvaNeural provides organic breath, melodic cadence, and human warmth
+    # Pitch tuned to +2Hz to give it a lighter, musical quality
+    candidate_voices = ["en-US-AvaNeural", "en-US-AriaNeural", "en-US-JennyNeural"]
     audio_data = bytearray()
-    async for chunk in communicate.stream():
-        if chunk["type"] == "audio":
-            audio_data.extend(chunk["data"])
+
+    for voice_name in candidate_voices:
+        try:
+            communicate = edge_tts.Communicate(
+                spoken_text, 
+                voice=voice_name, 
+                rate="+1%", 
+                pitch="+2Hz",
+                volume="+0%"
+            )
+            audio_data.clear()
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    audio_data.extend(chunk["data"])
+            if len(audio_data) > 0:
+                break
+        except Exception as e:
+            print(f"TTS {voice_name} error: {e}")
+            continue
+
     return Response(content=bytes(audio_data), media_type="audio/mpeg")
 
 if __name__ == "__main__":
