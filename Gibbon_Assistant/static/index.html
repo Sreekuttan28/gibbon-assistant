@@ -252,7 +252,6 @@
       color: #94a3b8;
     }
 
-    /* USER PROFILE & SETTINGS CARD AT BOTTOM OF SIDEBAR */
     .user-profile-dock {
       margin-top: auto;
       padding-top: 12px;
@@ -447,7 +446,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: env(safe-area-inset-top, 8px) 16px calc(8px + env(safe-area-inset-bottom, 12px));
+      padding: env(safe-area-inset-top, 8px) 16px calc(6px + env(safe-area-inset-bottom, 10px));
       position: relative;
       min-width: 0;
       height: 100%;
@@ -594,18 +593,18 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex: 1;
       min-height: 0;
       justify-content: flex-start;
-      padding-top: 6px;
+      padding-top: 4px;
     }
 
     .mascot-stage {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 28px;
+      gap: 24px;
       margin-bottom: 2px;
       flex-shrink: 0;
       position: relative;
@@ -614,8 +613,8 @@
 
     .reactor-podium {
       position: relative;
-      width: 92px;
-      height: 92px;
+      width: 84px;
+      height: 84px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -623,7 +622,7 @@
 
     .reactor-ring-outer {
       position: absolute;
-      inset: -6px;
+      inset: -5px;
       border-radius: 50%;
       border: 2px dashed var(--primary);
       opacity: 0.75;
@@ -640,17 +639,17 @@
     }
 
     .reactor-core-logo {
-      width: 74px;
-      height: 74px;
-      border-radius: 20px;
+      width: 68px;
+      height: 68px;
+      border-radius: 18px;
       border: 2.5px solid var(--primary);
       background: radial-gradient(circle, #0e203c 0%, #030814 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 24px var(--primary-glow);
+      box-shadow: 0 0 22px var(--primary-glow);
       overflow: hidden;
-      padding: 6px;
+      padding: 5px;
       z-index: 2;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -664,14 +663,14 @@
 
     .reactor-core-logo span {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 900;
       color: var(--primary);
     }
 
     .reactor-podium.active .reactor-core-logo {
-      transform: scale(1.1);
-      box-shadow: 0 0 30px var(--accent-glow), 0 0 35px var(--primary-glow);
+      transform: scale(1.08);
+      box-shadow: 0 0 28px var(--accent-glow), 0 0 32px var(--primary-glow);
     }
 
     .reactor-podium.active .reactor-ring-outer {
@@ -681,8 +680,8 @@
 
     .luffy-widget {
       position: relative;
-      width: 80px;
-      height: 96px;
+      width: 76px;
+      height: 90px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
@@ -692,16 +691,16 @@
     }
 
     .luffy-widget:hover {
-      transform: scale(1.1) translateY(-4px);
+      transform: scale(1.08) translateY(-3px);
     }
 
     .luffy-bubble {
       position: absolute;
-      top: -26px;
+      top: -24px;
       background: #ffffff;
       color: #030712;
       font-weight: 800;
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       padding: 3px 8px;
       border-radius: 12px;
       border: 1.5px solid #030712;
@@ -770,7 +769,7 @@
 
     @keyframes luffyJoyfulBounce {
       0% { transform: translateY(0) scale(1, 1); }
-      100% { transform: translateY(-9px) scale(1.06, 0.94); }
+      100% { transform: translateY(-8px) scale(1.06, 0.94); }
     }
 
     @keyframes spinClockwise {
@@ -783,21 +782,89 @@
       to { transform: rotate(0deg); }
     }
 
-    /* FULL FLUID EXPANDABLE LOG CARD - NO CUTOFFS */
+    /* ACCORDION USER QUESTION CARD (MINIMIZABLE WITH FLUID SPRING ANIMATION) */
+    .user-question-card {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.82);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 12px;
+      padding: 8px 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      display: none;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .question-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.66rem;
+      letter-spacing: 1px;
+      color: var(--primary);
+    }
+
+    .question-toggle-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.72rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s ease;
+    }
+
+    .question-toggle-btn:hover {
+      color: var(--primary);
+    }
+
+    .question-body {
+      font-size: 0.92rem;
+      line-height: 1.4;
+      color: #e2e8f0;
+      margin-top: 4px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .question-body.expanded {
+      -webkit-line-clamp: unset;
+      display: block;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    /* GIBBON RESPONSE HUD CARD */
     .hud-card {
       width: 100%;
       background: var(--panel);
       backdrop-filter: blur(14px);
       border: 1px solid var(--panel-border);
       border-radius: 14px;
-      padding: 14px 16px;
+      padding: 12px 14px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.6);
       display: flex;
       flex-direction: column;
       flex: 1;
-      max-height: 52vh;
-      min-height: 120px;
+      min-height: 100px;
       position: relative;
+      overflow: hidden;
     }
 
     .hud-card::before {
@@ -809,7 +876,7 @@
 
     .log-speaker {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       letter-spacing: 1.5px;
       color: var(--primary);
       text-transform: uppercase;
@@ -820,22 +887,17 @@
     }
 
     .log-content {
-      font-size: 1rem;
-      line-height: 1.55;
+      font-size: 0.98rem;
+      line-height: 1.5;
       color: #f1f5f9;
       overflow-y: auto;
       flex: 1;
-      padding-right: 6px;
+      padding-right: 4px;
       white-space: pre-wrap;
     }
 
-    /* Clean subtle cyber scrollbar */
     .log-content::-webkit-scrollbar {
-      width: 5px;
-    }
-    .log-content::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
-      border-radius: 4px;
+      width: 4px;
     }
     .log-content::-webkit-scrollbar-thumb {
       background: var(--primary);
@@ -856,7 +918,7 @@
     .media-holder img {
       width: 100%;
       height: auto;
-      max-height: 200px;
+      max-height: 180px;
       object-fit: cover;
       display: block;
     }
@@ -892,7 +954,7 @@
       display: flex;
       align-items: center;
       gap: 3px;
-      height: 10px;
+      height: 8px;
       flex-shrink: 0;
     }
 
@@ -913,15 +975,15 @@
       width: 100%;
       flex-shrink: 0;
       margin-top: auto;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
 
     .chip {
       background: rgba(15, 23, 42, 0.75);
       border: 1px solid var(--panel-border);
       color: #94a3b8;
-      font-size: 0.76rem;
-      padding: 5px 12px;
+      font-size: 0.75rem;
+      padding: 4px 11px;
       border-radius: 14px;
       cursor: pointer;
       white-space: nowrap;
@@ -938,43 +1000,91 @@
       color: var(--primary);
     }
 
+    /* FOOTER & EXPANDING INPUT DOCK */
     .hud-footer {
       width: 100%;
       max-width: 680px;
       margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
       flex-shrink: 0;
     }
 
     .dock-pill-container {
+      width: 100%;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       background: #101726;
-      border: 1px solid rgba(0, 240, 255, 0.35);
-      border-radius: 28px;
-      padding: 4px 6px 4px 14px;
+      border: 1px solid rgba(0, 240, 255, 0.38);
+      border-radius: 24px;
+      padding: 6px 8px 6px 14px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
       gap: 6px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
     }
 
-    .dock-pill-container input {
+    .dock-pill-container.maximized {
+      border-radius: 16px;
+      box-shadow: 0 0 25px var(--primary-glow);
+    }
+
+    .input-wrapper {
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+    }
+
+    /* Auto-resizing textarea with spring transition */
+    .dock-pill-container textarea {
+      width: 100%;
+      min-height: 24px;
+      max-height: 120px;
       background: transparent;
       border: none;
       color: #fff;
       font-family: 'Rajdhani', sans-serif;
       font-size: 1.02rem;
+      line-height: 1.35;
       outline: none;
-      min-width: 0;
+      resize: none;
+      padding: 3px 0 0 0;
+      overflow-y: auto;
+      transition: height 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .dock-pill-container input::placeholder {
+    .dock-pill-container.maximized textarea {
+      min-height: 85px;
+      max-height: 160px;
+    }
+
+    .dock-pill-container textarea::placeholder {
       color: #64748b;
       font-size: 0.92rem;
     }
 
+    .dock-pill-container textarea::-webkit-scrollbar {
+      width: 3px;
+    }
+    .dock-pill-container textarea::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    .dock-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      align-self: flex-end;
+    }
+
     .icon-action-btn {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       border: none;
       background: transparent;
@@ -988,8 +1098,8 @@
     }
 
     .icon-action-btn svg {
-      width: 18px;
-      height: 18px;
+      width: 17px;
+      height: 17px;
       fill: currentColor;
     }
 
@@ -1019,8 +1129,8 @@
     }
 
     .send-pill-btn {
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: #2563eb;
       border: none;
@@ -1035,14 +1145,28 @@
     }
 
     .send-pill-btn svg {
-      width: 18px;
-      height: 18px;
+      width: 17px;
+      height: 17px;
       fill: #fff;
     }
 
     .send-pill-btn:active {
       transform: scale(0.92);
       background: #1d4ed8;
+    }
+
+    /* DISCLAIMER NOTICE */
+    .disclaimer-text {
+      font-size: 0.68rem;
+      color: #64748b;
+      letter-spacing: 0.6px;
+      text-align: center;
+      padding-bottom: 2px;
+      user-select: none;
+    }
+
+    .disclaimer-text span {
+      color: var(--primary);
     }
 
     @media (max-width: 820px) {
@@ -1112,7 +1236,7 @@
         </div>
         <div class="brand-meta">
           <h2>MOKUTTAN LABS</h2>
-          <span>GIBBON NEURAL CORE V3.0</span>
+          <span>GIBBON NEURAL CORE V3.1</span>
         </div>
       </div>
       <button class="close-sidebar-btn" id="closeSidebarBtn" aria-label="Close Drawer">✕</button>
@@ -1130,7 +1254,6 @@
     <div class="sidebar-label">Your Private Inquiries</div>
     <div class="history-list" id="historyList"></div>
 
-    <!-- User Profile Deck at Bottom of Drawer -->
     <div class="user-profile-dock">
       <div class="user-profile-left">
         <div class="user-avatar-badge" id="sidebarAvatarBadge">👑</div>
@@ -1152,7 +1275,6 @@
           <span id="telemetryStatus">STANDBY</span>
         </div>
         <div id="liveClock">00:00:00 IST</div>
-        <!-- Live Voice Audio Toggle Switch -->
         <button class="audio-toggle-btn" id="voiceMuteToggleBtn" title="Toggle Voice Output">
           <span id="muteIcon">🔊</span>
           <span id="muteLabel">VOICE ON</span>
@@ -1191,7 +1313,6 @@
             <path d="M76 46 Q84 56 74 66 Q80 70 70 76" fill="#0f172a"/>
 
             <circle cx="50" cy="62" r="26" fill="#fed7aa" stroke="#1e293b" stroke-width="2"/>
-            
             <circle cx="23" cy="64" r="5" fill="#fbcfe8" stroke="#1e293b" stroke-width="1.6"/>
             <circle cx="77" cy="64" r="5" fill="#fbcfe8" stroke="#1e293b" stroke-width="1.6"/>
 
@@ -1216,7 +1337,19 @@
         </div>
       </div>
 
-      <!-- FULL DEPTH SCROLLABLE HUD CARD -->
+      <!-- ACCORDION USER QUESTION CARD (2-line preview or fully expanded) -->
+      <div class="user-question-card" id="userQuestionCard">
+        <div class="question-header" id="questionHeader" onclick="toggleQuestionExpand()">
+          <div class="question-badge">
+            <span id="questionUserAvatar">👑</span>
+            <span id="questionUserLabel">YOUR QUESTION</span>
+          </div>
+          <button class="question-toggle-btn" id="questionToggleBtn">Show full ▾</button>
+        </div>
+        <div class="question-body" id="questionBody"></div>
+      </div>
+
+      <!-- GIBBON RESPONSE HUD CARD -->
       <div class="hud-card">
         <div class="log-speaker">
           <span id="speakerLabel">MOKUTTAN LABS</span>
@@ -1244,24 +1377,41 @@
     </main>
 
     <footer class="hud-footer">
-      <div class="dock-pill-container">
-        <input type="text" id="hudInput" placeholder="Type a message or say 'Hey Gibbon'..." />
-        <button class="icon-action-btn icon-cancel-btn" id="audioStopBtn" title="Stop Audio" aria-label="Stop Playback">
+      <div class="dock-pill-container" id="dockContainer">
+        <!-- Maximize / Expand button on the left -->
+        <button class="icon-action-btn" id="expandToggleBtn" onclick="toggleInputMaximize()" title="Expand or shrink input box">
           <svg viewBox="0 0 24 24">
-            <rect x="6" y="6" width="12" height="12" rx="2"/>
+            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
           </svg>
         </button>
-        <button class="icon-action-btn" id="micBtn" title="Voice Input" aria-label="Microphone">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-          </svg>
-        </button>
-        <button class="send-pill-btn" id="sendBtn" title="Send Message" aria-label="Send">
-          <svg viewBox="0 0 24 24">
-            <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/>
-          </svg>
-        </button>
+
+        <div class="input-wrapper">
+          <textarea id="hudInput" rows="1" placeholder="Type a message or say 'Hey Gibbon'..."></textarea>
+        </div>
+
+        <div class="dock-btn-group">
+          <button class="icon-action-btn icon-cancel-btn" id="audioStopBtn" title="Stop Audio" aria-label="Stop Playback">
+            <svg viewBox="0 0 24 24">
+              <rect x="6" y="6" width="12" height="12" rx="2"/>
+            </svg>
+          </button>
+          <button class="icon-action-btn" id="micBtn" title="Voice Input" aria-label="Microphone">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+            </svg>
+          </button>
+          <button class="send-pill-btn" id="sendBtn" title="Send Message" aria-label="Send">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Gibbon AI can make mistakes disclaimer -->
+      <div class="disclaimer-text">
+        <span>Gibbon AI</span> can make mistakes. Verify important facts & calculations.
       </div>
     </footer>
   </div>
@@ -1271,7 +1421,6 @@
       navigator.serviceWorker.register('/static/sw.js');
     }
 
-    // Accurate Indian Standard Time live clock
     function updateClock() {
       const options = { timeZone: "Asia/Kolkata", hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
       document.getElementById('liveClock').textContent = new Intl.DateTimeFormat('en-GB', options).format(new Date()) + " IST";
@@ -1279,7 +1428,6 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Isolated Device & User Profile Management
     let userSessionId = localStorage.getItem('gibbon_device_id');
     if (!userSessionId) {
       userSessionId = 'user_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now();
@@ -1299,9 +1447,19 @@
     const muteIcon = document.getElementById('muteIcon');
     const muteLabel = document.getElementById('muteLabel');
 
+    const dockContainer = document.getElementById('dockContainer');
+    const hudInput = document.getElementById('hudInput');
+    const userQuestionCard = document.getElementById('userQuestionCard');
+    const questionBody = document.getElementById('questionBody');
+    const questionToggleBtn = document.getElementById('questionToggleBtn');
+    const questionUserAvatar = document.getElementById('questionUserAvatar');
+    const questionUserLabel = document.getElementById('questionUserLabel');
+
     function applyUserProfile() {
       sidebarUserName.textContent = currentUserName;
       sidebarAvatarBadge.textContent = currentUserAvatar;
+      questionUserAvatar.textContent = currentUserAvatar;
+      questionUserLabel.textContent = `${currentUserName.toUpperCase()}'S QUESTION`;
     }
 
     function applyVoiceMuteState() {
@@ -1363,12 +1521,66 @@
       triggerLuffyAction(`Hey ${currentUserName}!`);
     }
 
+    // AUTO-RESIZING & MANUAL EXPANDING INPUT TEXTAREA
+    function adjustTextareaHeight() {
+      if (!dockContainer.classList.contains('maximized')) {
+        hudInput.style.height = 'auto';
+        hudInput.style.height = Math.min(hudInput.scrollHeight, 120) + 'px';
+      }
+    }
+
+    hudInput.addEventListener('input', () => {
+      adjustTextareaHeight();
+      if (hudInput.value.trim().length > 0) {
+        setLuffyState('curious');
+      } else if (!currentAudio) {
+        setLuffyState(null);
+      }
+    });
+
+    function toggleInputMaximize() {
+      dockContainer.classList.toggle('maximized');
+      if (!dockContainer.classList.contains('maximized')) {
+        adjustTextareaHeight();
+      }
+      hudInput.focus();
+    }
+
+    // ACCORDION QUESTION EXPAND / COLLAPSE
+    let isQuestionExpanded = false;
+    function toggleQuestionExpand() {
+      isQuestionExpanded = !isQuestionExpanded;
+      if (isQuestionExpanded) {
+        questionBody.classList.add('expanded');
+        questionToggleBtn.textContent = 'Show less ▴';
+      } else {
+        questionBody.classList.remove('expanded');
+        questionToggleBtn.textContent = 'Show full ▾';
+      }
+    }
+
+    function displayUserQuestion(text) {
+      userQuestionCard.style.display = 'flex';
+      questionBody.textContent = text;
+      questionBody.classList.remove('expanded');
+      isQuestionExpanded = false;
+
+      // Only show toggle button if text is long enough to overflow 2 lines
+      setTimeout(() => {
+        if (questionBody.scrollHeight > 45) {
+          questionToggleBtn.style.display = 'inline-block';
+          questionToggleBtn.textContent = 'Show full ▾';
+        } else {
+          questionToggleBtn.style.display = 'none';
+        }
+      }, 50);
+    }
+
     const micBtn = document.getElementById('micBtn');
     const telemetryStatus = document.getElementById('telemetryStatus');
     const logContent = document.getElementById('logContent');
     const speakerLabel = document.getElementById('speakerLabel');
     const mediaHolder = document.getElementById('mediaHolder');
-    const hudInput = document.getElementById('hudInput');
     const sendBtn = document.getElementById('sendBtn');
     const waveBars = document.querySelectorAll('.wave-bar');
     const liveHearing = document.getElementById('liveHearing');
@@ -1391,15 +1603,7 @@
     let currentAudio = null;
     let recognizer = null;
 
-    const luffyQuotes = [
-      "Shishishi!",
-      "Meat!! 🍖",
-      "I'm gonna be King of the Pirates!",
-      "Tell me more!",
-      "Gomu Gomu no...",
-      "What are we building today?",
-      "Sugoi!!"
-    ];
+    const luffyQuotes = ["Shishishi!", "Meat!! 🍖", "I'm gonna be King of the Pirates!", "Tell me more!", "Gomu Gomu no...", "Sugoi!!"];
     let bubbleTimer = null;
 
     function triggerLuffyAction(quoteText) {
@@ -1432,14 +1636,6 @@
       if (state) luffyWidget.classList.add(state);
     }
 
-    hudInput.addEventListener('input', () => {
-      if (hudInput.value.trim().length > 0) {
-        setLuffyState('curious');
-      } else if (!currentAudio) {
-        setLuffyState(null);
-      }
-    });
-
     setInterval(() => {
       if (!currentAudio && !isListening && hudInput.value.trim().length === 0) {
         const actions = ['curious', 'thinking'];
@@ -1465,7 +1661,6 @@
     closeSidebarBtn.addEventListener('click', closeSidebar);
     sidebarBackdrop.addEventListener('click', closeSidebar);
 
-    // Private isolated history per device
     const storageKey = 'gibbon_sessions_' + userSessionId;
     let sessions = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
@@ -1501,9 +1696,11 @@
     }
 
     function loadPastSession(session) {
-      speakerLabel.textContent = "PREVIOUS QUESTION";
-      logContent.textContent = `You asked: "${session.prompt}"\n\nGibbon: ${session.response}`;
+      displayUserQuestion(session.prompt);
+      speakerLabel.textContent = "GIBBON CORE";
+      logContent.textContent = session.response;
       hudInput.value = `Tell me more about: ${session.prompt}`;
+      adjustTextareaHeight();
       hudInput.focus();
       setLuffyState('curious');
       closeSidebar();
@@ -1519,6 +1716,7 @@
       } catch (e) {}
       speakerLabel.textContent = "MOKUTTAN LABS";
       logContent.textContent = `Memory refreshed, ${currentUserName}! Ready for your questions.`;
+      userQuestionCard.style.display = "none";
       mediaHolder.style.display = "none";
       triggerLuffyAction("Fresh start!");
       closeSidebar();
@@ -1559,7 +1757,7 @@
         reactorPodium.classList.add('active');
         waveInterval = setInterval(() => {
           waveBars.forEach(b => {
-            b.style.height = `${Math.floor(Math.random() * 10) + 3}px`;
+            b.style.height = `${Math.floor(Math.random() * 8) + 3}px`;
           });
         }, 110);
       } else {
@@ -1569,7 +1767,6 @@
       }
     }
 
-    // High-Definition Neural Audio Playback (Respects Voice Mute Switch)
     function playVoice(text, onComplete) {
       if (isVoiceMuted) {
         onComplete();
@@ -1617,9 +1814,16 @@
         try { recognizer.stop(); } catch (e) {}
       }
 
+      displayUserQuestion(command);
+
+      // Reset textarea height and collapse maximize container
+      hudInput.value = '';
+      dockContainer.classList.remove('maximized');
+      hudInput.style.height = '24px';
+
       telemetryStatus.textContent = "THINKING";
-      speakerLabel.textContent = `${currentUserName.toUpperCase()}`;
-      logContent.textContent = `"${command}"`;
+      speakerLabel.textContent = "GIBBON CORE";
+      logContent.textContent = "Thinking...";
       liveHearing.textContent = "";
       mediaHolder.style.display = "none";
       animateWaves(true);
@@ -1679,14 +1883,16 @@
 
     sendBtn.addEventListener('click', () => {
       const val = hudInput.value.trim();
-      if (val) {
-        sendDirective(val);
-        hudInput.value = '';
-      }
+      if (val) sendDirective(val);
     });
 
-    hudInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendBtn.click();
+    hudInput.addEventListener('keydown', (e) => {
+      // Enter without Shift sends the message
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const val = hudInput.value.trim();
+        if (val) sendDirective(val);
+      }
     });
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
