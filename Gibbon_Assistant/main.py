@@ -358,22 +358,21 @@ async def process_command(request: Request):
 @app.get("/api/tts")
 async def text_to_speech(text: str):
     spoken_text = text[:320]
-    # 'en-IN-KavyaNeural' has a soft, expressive, storytelling timbre
-    # rate="-8%" gives it a deliberate, gentle narrative cadence
-    # pitch="+2Hz" adds melodic warmth typical of children's storybook narration
+    # 'en-IN-PrabhatNeural' delivers a smooth, charismatic Indian male presenter tone
+    # rate="+2%" gives it that upbeat, crisp radio jockey pacing
+    # pitch="-1Hz" adds a slightly deeper radio-mic resonance without muffling clarity
     communicate = edge_tts.Communicate(
         spoken_text, 
-        voice="en-IN-KavyaNeural",
-        rate="-8%", 
-        pitch="+2Hz",
-        volume="-5%"
+        voice="en-IN-PrabhatNeural", 
+        rate="+2%", 
+        pitch="-1Hz",
+        volume="+0%"
     )
     audio_data = bytearray()
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
             audio_data.extend(chunk["data"])
     return Response(content=bytes(audio_data), media_type="audio/mpeg")
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
