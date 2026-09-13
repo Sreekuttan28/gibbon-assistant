@@ -12,13 +12,10 @@ from fastapi.responses import FileResponse, Response
 from geopy.geocoders import Nominatim
 from duckduckgo_search import DDGS
 from google import genai
+from google.genai import types
 import edge_tts
 
 app = FastAPI(title="GIBBON AKA ASSISTANT")
-
-# Render environment variable
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-ai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 MEDIA_DIR = "saved_media"
 DB_FILE = "assistant.db"
@@ -27,7 +24,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v4")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v5")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -50,29 +47,44 @@ SYSTEM_INSTRUCTION = (
 )
 
 chat_session = None
+ai_client = None
 
 def init_chat_session():
-    """Initializes the multi-turn session and dynamically refreshes the client if needed."""
+    """Initializes the multi-turn session with model fallback protection."""
     global chat_session, ai_client
     current_key = os.getenv("GEMINI_API_KEY")
-    
-    if current_key and (ai_client is None or getattr(ai_client, "api_key", None) != current_key):
-        try:
-            ai_client = genai.Client(api_key=current_key)
-        except Exception as e:
-            print(f"Error creating GenAI client: {e}")
-            ai_client = None
+    if not current_key:
+        print("GEMINI_API_KEY is not set in environment.")
+        chat_session = None
+        return "ERROR: GEMINI_API_KEY environment variable is not set in Render."
 
-    if ai_client:
+    try:
+        ai_client = genai.Client(api_key=current_key)
+    except Exception as e:
+        print(f"Client init failed: {e}")
+        chat_session = None
+        return f"Client creation error: {str(e)}"
+
+    # Try preferred modern models with fallback
+    candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash"]
+    last_err = None
+
+    for model_name in candidate_models:
         try:
             chat_session = ai_client.chats.create(
-                model="gemini-2.5-flash",
-                config={"system_instruction": SYSTEM_INSTRUCTION}
+                model=model_name,
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_INSTRUCTION
+                )
             )
-            print("Chat session successfully initialized.")
+            print(f"Chat session active using model: {model_name}")
+            return None
         except Exception as e:
-            print(f"Chat session creation error: {e}")
-            chat_session = None
+            print(f"Failed initiating {model_name}: {e}")
+            last_err = e
+
+    chat_session = None
+    return f"Failed connecting to Gemini: {str(last_err)}"
 
 init_chat_session()
 
@@ -91,30 +103,31 @@ THINKING_PREFIXES = [
 ]
 
 def ask_ai_brain(prompt: str) -> str:
-    """Answers using multi-turn memory with automatic reconnect fallback."""
+    """Answers using multi-turn conversation memory with direct error diagnostics."""
     global chat_session, ai_client
-    
+
     if not os.getenv("GEMINI_API_KEY"):
-        return "Master, please set your GEMINI_API_KEY in Render's Environment settings."
+        return "Master, GEMINI_API_KEY is not set in Render's Environment settings."
 
     if chat_session is None:
-        init_chat_session()
-
-    if chat_session is None:
-        return "Master, my cognitive engine could not authenticate. Please verify your GEMINI_API_KEY value."
+        err = init_chat_session()
+        if err:
+            return f"Master, authentication issue: {err}"
 
     try:
         response = chat_session.send_message(prompt)
         return response.text.strip()
     except Exception as e:
-        print(f"Chat memory runtime exception: {e}")
+        print(f"Direct Gemini exception: {type(e).__name__}: {e}")
+        # Try re-initializing once on failure
+        err = init_chat_session()
+        if err:
+            return f"Master, connection issue: {err}"
         try:
-            init_chat_session()
             response = chat_session.send_message(prompt)
             return response.text.strip()
         except Exception as retry_err:
-            print(f"Retry failed: {retry_err}")
-            return "Apologies Master, my memory buffer experienced a brief reset. Could you ask once more?"
+            return f"Neural link error [{type(retry_err).__name__}]: {str(retry_err)}"
 
 def compute_route_and_distance(origin_str: str, dest_str: str) -> dict:
     """Calculates road distance, travel duration, and route via OpenStreetMap & OSRM."""
@@ -311,7 +324,6 @@ async def process_command(request: Request):
 
 @app.get("/api/tts")
 async def text_to_speech(text: str):
-    # Gentle, soft, and quiet British vocal profile
     communicate = edge_tts.Communicate(
         text, 
         voice="en-GB-LibbyNeural", 
