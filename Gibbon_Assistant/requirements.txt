@@ -1,9 +1,9 @@
 fastapi
 uvicorn
-edge-tts
-python-multipart
 requests
 geopy
-duckduckgo-search
+duckduckgo_search
 google-genai
 groq
+edge-tts
+beautifulsoup4
