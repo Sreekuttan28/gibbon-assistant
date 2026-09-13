@@ -27,11 +27,10 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v20")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v21")
 IST = ZoneInfo("Asia/Kolkata")
 
 def get_ist_now() -> datetime:
-    """Always returns current time in Indian Standard Time (IST)."""
     return datetime.now(IST)
 
 def init_db():
@@ -49,25 +48,37 @@ def init_db():
 
 init_db()
 
-# Isolated in-memory turn history per user session
 user_conversation_histories = defaultdict(list)
 
-def get_dynamic_system_instruction(user_name: str) -> str:
+def search_live_web(query: str) -> str:
+    """Searches live DuckDuckGo web for real-time grounding."""
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=4))
+            if results:
+                return "\n".join([f"- {r.get('title', '')}: {r.get('body', '')}" for r in results])
+    except Exception as e:
+        print(f"DuckDuckGo search error: {e}")
+    return ""
+
+def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> str:
     now_ist = get_ist_now()
     now_str = now_ist.strftime("%A, %B %d, %Y at %I:%M %p IST")
     call_name = user_name.strip() if user_name and user_name.strip() else "Chief"
     
-    return (
-        f"You are Gibbon, a friendly, intelligent personal AI assistant engineered by Mokuttan Labs. "
+    instruction = (
+        f"You are Gibbon, a friendly, modern personal AI assistant engineered by Mokuttan Labs. "
         f"The user's name is {call_name}. Address the user naturally by {call_name}. "
         f"The current real-world date and time is {now_str} (Indian Standard Time). "
-        "COMMUNICATION GUIDELINES: "
-        "1. Write in simple, clear, everyday English that is very easy to understand for anyone, including people who know basic English. "
-        "2. Avoid difficult words, complicated idioms, or overly dense academic sentences. Be direct, helpful, and polite. "
-        "3. Do NOT cut your answers short artificially. Explain things completely, step-by-step, and logically so the user gets a full and satisfying answer. "
-        "4. TIMING & SCHEDULE RULES: When calculating sleep, rest, work, or routine schedules, calculate the math carefully step-by-step. "
-        "If work finishes at 2:00 AM, sleep should begin shortly after (e.g., 2:30 AM), and 7.5 to 8 hours of sleep means waking up around 10:00 AM or 10:30 AM. Never suggest waking up at 6:00 AM or 9:00 AM after a 2:00 AM shift."
+        "CRITICAL REAL-TIME ACCURACY RULES: "
+        "1. Never guess or state that tech from 2023 or earlier is the latest if more recent products exist. "
+        "2. When answering questions about 'latest', 'current', released products, or events, always ground your answer in the verified real-world context provided below. "
+        "3. Write in clear, simple English that is very easy to understand for everyone. "
+        "4. Do not cut answers unnaturally short. Give the accurate answer with proper context."
     )
+    if live_context:
+        instruction += f"\n\nLIVE SEARCH GROUNDING DATA (USE THIS REAL-TIME DATA TO ANSWER ACCURATELY):\n{live_context}"
+    return instruction
 
 def get_gemini_keys():
     keys_str = os.getenv("GEMINI_API_KEYS") or os.getenv("GEMINI_API_KEY") or ""
@@ -75,7 +86,7 @@ def get_gemini_keys():
 
 gemini_key_index = 0
 
-def query_gemini(prompt: str, key: str, user_id: str, user_name: str) -> str:
+def query_gemini(prompt: str, key: str, user_id: str, user_name: str, live_context: str = "") -> str:
     client = genai.Client(api_key=key)
     candidate_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
     last_err = None
@@ -85,12 +96,11 @@ def query_gemini(prompt: str, key: str, user_id: str, user_name: str) -> str:
             chat = client.chats.create(
                 model=m,
                 config=types.GenerateContentConfig(
-                    system_instruction=get_dynamic_system_instruction(user_name),
+                    system_instruction=get_dynamic_system_instruction(user_name, live_context),
                     tools=[{"google_search": {}}]
                 )
             )
 
-            # Replay past 4 turns for context
             history = user_conversation_histories[user_id]
             for turn in history[-4:]:
                 if turn["role"] == "user":
@@ -112,13 +122,13 @@ def query_gemini(prompt: str, key: str, user_id: str, user_name: str) -> str:
 
     raise last_err or RuntimeError("Gemini models failed.")
 
-def query_groq(prompt: str, user_id: str, user_name: str) -> str:
+def query_groq(prompt: str, user_id: str, user_name: str, live_context: str = "") -> str:
     groq_key = os.getenv("GROQ_API_KEY")
     if not groq_key:
         raise RuntimeError("GROQ_API_KEY not set.")
 
     client = Groq(api_key=groq_key)
-    messages = [{"role": "system", "content": get_dynamic_system_instruction(user_name)}]
+    messages = [{"role": "system", "content": get_dynamic_system_instruction(user_name, live_context)}]
     history = user_conversation_histories[user_id]
     for turn in history[-4:]:
         messages.append({"role": turn["role"], "content": turn["content"]})
@@ -132,7 +142,7 @@ def query_groq(prompt: str, user_id: str, user_name: str) -> str:
             chat_completion = client.chat.completions.create(
                 messages=messages,
                 model=model_name,
-                temperature=0.4,
+                temperature=0.3,
                 max_tokens=800
             )
             return chat_completion.choices[0].message.content.strip()
@@ -143,7 +153,7 @@ def query_groq(prompt: str, user_id: str, user_name: str) -> str:
 
     raise last_err or RuntimeError("All Groq models failed.")
 
-def ask_ai_brain(prompt: str, user_id: str, user_name: str) -> str:
+def ask_ai_brain(prompt: str, user_id: str, user_name: str, live_context: str = "") -> str:
     global gemini_key_index
     gemini_keys = get_gemini_keys()
 
@@ -151,7 +161,7 @@ def ask_ai_brain(prompt: str, user_id: str, user_name: str) -> str:
         for _ in range(len(gemini_keys)):
             current_key = gemini_keys[gemini_key_index]
             try:
-                reply = query_gemini(prompt, current_key, user_id, user_name)
+                reply = query_gemini(prompt, current_key, user_id, user_name, live_context)
                 user_conversation_histories[user_id].append({"role": "user", "content": prompt})
                 user_conversation_histories[user_id].append({"role": "assistant", "content": reply})
                 return reply
@@ -161,7 +171,7 @@ def ask_ai_brain(prompt: str, user_id: str, user_name: str) -> str:
 
     if os.getenv("GROQ_API_KEY"):
         try:
-            reply = query_groq(prompt, user_id, user_name)
+            reply = query_groq(prompt, user_id, user_name, live_context)
             user_conversation_histories[user_id].append({"role": "user", "content": prompt})
             user_conversation_histories[user_id].append({"role": "assistant", "content": reply})
             return reply
@@ -169,7 +179,7 @@ def ask_ai_brain(prompt: str, user_id: str, user_name: str) -> str:
             print(f"Groq failover exception: {groq_err}")
 
     call_name = user_name.strip() if user_name and user_name.strip() else "Chief"
-    return f"I am sorry {call_name}, the AI connection is temporarily busy right now. Please wait about 20 seconds and ask me again."
+    return f"I am sorry {call_name}, connection is busy right now. Please ask me again in 20 seconds."
 
 def generate_image_with_fallback(clean_prompt: str) -> str:
     encoded = quote(clean_prompt)
@@ -188,8 +198,7 @@ def generate_image_with_fallback(clean_prompt: str) -> str:
                 with open(filepath, "wb") as f:
                     f.write(resp.content)
                 return filename
-        except Exception as e:
-            print(f"Image retry failed: {e}")
+        except Exception:
             continue
     return None
 
@@ -205,7 +214,7 @@ def get_live_forecast(city_name: str, user_name: str) -> str:
     try:
         loc = geolocator.geocode(city_name, timeout=10)
         if not loc:
-            return f"{call_name}, I could not find the location for {city_name}."
+            return f"{call_name}, I could not find coordinates for {city_name}."
 
         url = (
             f"https://api.open-meteo.com/v1/forecast?"
@@ -223,8 +232,8 @@ def get_live_forecast(city_name: str, user_name: str) -> str:
 
         city_clean = loc.address.split(",")[0]
         return (
-            f"Right now in {city_clean}, the temperature is {temp}°C with wind speed around {wind} km/h. "
-            f"Today the highest temperature will reach {max_t}°C and the lowest will be {min_t}°C."
+            f"Right now in {city_clean}, the temperature is {temp}°C with wind speed at {wind} km/h. "
+            f"Today's high is {max_t}°C and the low is {min_t}°C."
         )
     except Exception:
         return f"Could not check the live weather right now, {call_name}."
@@ -249,7 +258,7 @@ async def process_command(request: Request):
     user_name = data.get("user_name", "Chief").strip() or "Chief"
     lower = raw_message.lower()
 
-    # Exact Indian Standard Time (IST)
+    # Exact Indian Standard Time (IST) Direct Answers
     if any(k in lower for k in ["what time is it", "current time", "what's the time", "tell me the time", "time now"]):
         now_time = get_ist_now().strftime("%I:%M %p")
         return {"reply": f"The current time is {now_time} IST, {user_name}."}
@@ -269,15 +278,15 @@ async def process_command(request: Request):
     if any(greet in lower for greet in ["hello", "hi", "hey", "wake up"]):
         clean_check = re.sub(r"\b(gibbon|given|hey|hi|hello|wake up)\b", "", lower).strip()
         if len(clean_check) < 2:
-            return {"reply": f"Hello {user_name}! Mokuttan Labs core is ready. How can I help you today?"}
+            return {"reply": f"Hello {user_name}! Mokuttan Labs core is ready. What can I do for you today?"}
 
-    # Prompt Engineering for Midjourney / Video
+    # Prompt Engineering for Creators
     if any(k in lower for k in ["prompt for", "make a prompt", "create a prompt", "video prompt", "midjourney prompt"]):
         idea = re.sub(r"\b(gibbon|given|prompt for|make a prompt for|create a prompt for|video prompt for|generate prompt for)\b", "", raw_message, flags=re.IGNORECASE).strip()
         engineered = engineer_prompt_for_creator(idea or raw_message, user_id, user_name)
         return {"reply": f"Here is a simple and clear prompt you can copy and use, {user_name}:\n\n\"{engineered}\""}
 
-    # Free Neural Image Generation
+    # Image Generation
     elif any(k in lower for k in ["generate image", "create image", "draw", "render image", "make an image"]):
         clean_idea = re.sub(r"\b(gibbon|given|generate an image of|generate image of|create an image of|draw|render|make an image of)\b", "", raw_message, flags=re.IGNORECASE).strip()
         filename = generate_image_with_fallback(clean_idea or "futuristic glowing core")
@@ -320,8 +329,21 @@ async def process_command(request: Request):
             return {"reply": f"Here are your pending reminders, {user_name}: {tasks}."}
         return {"reply": f"Your reminder list is completely empty right now, {user_name}."}
 
+    # AUTOMATIC REAL-TIME SEARCH ROUTING
+    # Checks if question is about latest products, releases, news, tech, or current facts
+    live_context = ""
+    needs_live_data = any(w in lower for w in [
+        "latest", "newest", "current", "release", "released", "launch", 
+        "price", "who is", "news", "specs", "phone", "iphone", "apple", "samsung"
+    ])
+
+    if needs_live_data:
+        search_query = re.sub(r"\b(gibbon|given|hey|hi)\b", "", raw_message, flags=re.IGNORECASE).strip()
+        current_year = get_ist_now().strftime("%Y")
+        live_context = search_live_web(f"{search_query} {current_year}")
+
     clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
-    ai_answer = ask_ai_brain(clean_prompt or raw_message, user_id, user_name)
+    ai_answer = ask_ai_brain(clean_prompt or raw_message, user_id, user_name, live_context)
     return {"reply": ai_answer}
 
 @app.get("/api/tts")
