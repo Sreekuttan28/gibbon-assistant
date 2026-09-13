@@ -47,7 +47,6 @@
       padding: env(safe-area-inset-top, 8px) 10px calc(8px + env(safe-area-inset-bottom, 12px));
     }
 
-    /* Ambient CRT Scanline */
     body::before {
       content: " ";
       position: fixed;
@@ -58,7 +57,6 @@
       z-index: 99;
     }
 
-    /* Header */
     header {
       width: 100%;
       max-width: 480px;
@@ -121,7 +119,6 @@
       color: var(--primary);
     }
 
-    /* Main Console */
     main {
       width: 100%;
       max-width: 480px;
@@ -135,7 +132,6 @@
       justify-content: space-evenly;
     }
 
-    /* Compact Reactor Core */
     .reactor-wrap {
       position: relative;
       width: 120px;
@@ -235,7 +231,6 @@
       max-width: 90%;
     }
 
-    /* Equalizer Visualizer */
     .wave-box {
       display: flex;
       align-items: center;
@@ -253,7 +248,6 @@
       box-shadow: 0 0 4px var(--primary);
     }
 
-    /* Scrollable Holographic Card */
     .hud-card {
       width: 100%;
       background: var(--panel);
@@ -337,7 +331,6 @@
       flex-shrink: 0;
     }
 
-    /* Quick Chips */
     .quick-chips {
       display: flex;
       flex-wrap: wrap;
@@ -364,7 +357,6 @@
       border-color: var(--primary);
     }
 
-    /* Bottom Input Dock */
     .hud-footer {
       width: 100%;
       max-width: 480px;
@@ -398,7 +390,26 @@
       font-size: 0.85rem;
     }
 
-    /* Stop Button Next to EXEC */
+    .send-trigger {
+      padding: 6px 12px;
+      border-radius: 6px;
+      background: var(--primary);
+      border: none;
+      color: #030712;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--primary-glow);
+      white-space: nowrap;
+      transition: transform 0.15s ease;
+    }
+
+    .send-trigger:active {
+      transform: scale(0.95);
+    }
+
     .stop-trigger {
       padding: 6px 10px;
       border-radius: 6px;
@@ -417,27 +428,6 @@
     .stop-trigger:active {
       background: var(--accent);
       color: #fff;
-      transform: scale(0.95);
-    }
-
-    /* EXEC Button */
-    .send-trigger {
-      padding: 6px 12px;
-      border-radius: 6px;
-      background: var(--primary);
-      border: none;
-      color: #030712;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      box-shadow: 0 0 10px var(--primary-glow);
-      white-space: nowrap;
-      transition: transform 0.15s ease;
-    }
-
-    .send-trigger:active {
       transform: scale(0.95);
     }
   </style>
@@ -483,7 +473,7 @@
     <div class="hud-card">
       <div class="log-speaker">
         <span id="speakerLabel">FEEDBACK</span>
-        <span id="timestamp">SYS: 2.6</span>
+        <span id="timestamp">SYS: 2.7</span>
       </div>
       <div class="log-content" id="logContent">
         "Tap the reactor core once to initiate voice protocols, Master. I will remember our discussion and follow your directives seamlessly."
@@ -500,19 +490,19 @@
     </div>
   </main>
 
-<footer class="hud-footer">
+  <footer class="hud-footer">
     <div class="hud-input-row">
       <input type="text" id="hudInput" placeholder="Directive or 'Hey Gibbon'..." />
       <button class="send-trigger" id="sendBtn">EXEC</button>
       <button class="stop-trigger" id="audioStopBtn" title="Stop Audio">🔇 STOP</button>
     </div>
   </footer>
+
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/static/sw.js');
     }
 
-    // Live clock
     function updateClock() {
       const now = new Date();
       document.getElementById('liveClock').textContent = now.toTimeString().split(' ')[0];
@@ -539,8 +529,8 @@
     let silenceTimer = null;
     let accumulatedDirective = "";
     let currentAudio = null;
+    let recognizer = null;
 
-    // Stop voice playback instantly
     audioStopBtn.addEventListener('click', () => {
       if (currentAudio) {
         currentAudio.pause();
@@ -550,6 +540,11 @@
       animateWaves(false);
       telemetryStatus.textContent = "MUTED";
       liveHearing.textContent = "Playback silenced.";
+
+      // Resume listening after manual mute if mode is active
+      if (isListening && recognizer) {
+        try { recognizer.start(); } catch (e) {}
+      }
     });
 
     function animateWaves(active) {
@@ -568,10 +563,15 @@
     async function sendDirective(command) {
       if (!command || command.trim().length < 2) return;
 
-      // Halt any ongoing speech before processing new request
+      // 1. Halt any ongoing audio
       if (currentAudio) {
         currentAudio.pause();
         currentAudio = null;
+      }
+
+      // 2. Temporarily stop the microphone so it does not hear Gibbon's own output
+      if (recognizer && isListening) {
+        try { recognizer.stop(); } catch (e) {}
       }
 
       telemetryStatus.textContent = "SYNCING";
@@ -602,17 +602,23 @@
           navBtn.href = data.map_link;
         }
 
+        // 3. Play voice
         currentAudio = new Audio(`/api/tts?text=${encodeURIComponent(data.reply)}`);
         currentAudio.play().catch(e => console.warn("Audio autoplay blocked:", e));
 
+        // 4. Resume listening only after speech has completely finished
         currentAudio.onended = () => {
           currentAudio = null;
           animateWaves(false);
           awaitingDirective = false;
           accumulatedDirective = "";
           micBtn.classList.remove('listening');
-          telemetryStatus.textContent = "LISTENING";
+          telemetryStatus.textContent = "STANDBY";
           liveHearing.textContent = "Say 'Hey Gibbon'...";
+
+          if (isListening && recognizer) {
+            try { recognizer.start(); } catch (e) {}
+          }
         };
       } catch (err) {
         animateWaves(false);
@@ -620,6 +626,10 @@
         micBtn.classList.remove('listening');
         telemetryStatus.textContent = "LINK LOST";
         logContent.textContent = "Neural connection lost. Check server status.";
+
+        if (isListening && recognizer) {
+          try { recognizer.start(); } catch (e) {}
+        }
       }
     }
 
@@ -638,7 +648,7 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (SpeechRecognition) {
-      const recognizer = new SpeechRecognition();
+      recognizer = new SpeechRecognition();
       recognizer.continuous = true;
       recognizer.interimResults = true;
       recognizer.lang = 'en-US';
@@ -653,7 +663,8 @@
       }
 
       recognizer.onend = () => {
-        if (isListening) {
+        // Auto-restart only if listening mode is active AND audio is not currently playing
+        if (isListening && !currentAudio) {
           setTimeout(() => {
             try { recognizer.start(); } catch (e) {}
           }, 300);
