@@ -25,7 +25,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v9")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v11")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -59,14 +59,13 @@ def reset_memory():
     conversation_history = []
 
 def query_gemini(prompt: str, key: str) -> str:
-    """Uses the official Chats API to support Automatic Function Calling & Google Search Grounding."""
+    """Uses official chats.create to prevent AFC generate_content warnings."""
     client = genai.Client(api_key=key)
     candidate_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
     last_err = None
 
     for m in candidate_models:
         try:
-            # Build chat session with system instruction and search tools
             chat = client.chats.create(
                 model=m,
                 config=types.GenerateContentConfig(
@@ -75,7 +74,7 @@ def query_gemini(prompt: str, key: str) -> str:
                 )
             )
 
-            # Replay recent context into the session if available
+            # Replay recent conversation context safely
             for turn in conversation_history[-4:]:
                 if turn["role"] == "user":
                     try:
@@ -97,10 +96,10 @@ def query_gemini(prompt: str, key: str) -> str:
     raise last_err or RuntimeError("Gemini models failed.")
 
 def query_groq(prompt: str) -> str:
-    """Fallback using Groq with verified model fallbacks."""
+    """Fallback engine using verified endpoints from your Groq dashboard."""
     groq_key = os.getenv("GROQ_API_KEY")
     if not groq_key:
-        raise RuntimeError("GROQ_API_KEY not configured.")
+        raise RuntimeError("GROQ_API_KEY not set.")
 
     client = Groq(api_key=groq_key)
     messages = [{"role": "system", "content": SYSTEM_INSTRUCTION}]
@@ -108,11 +107,11 @@ def query_groq(prompt: str) -> str:
         messages.append({"role": turn["role"], "content": turn["content"]})
     messages.append({"role": "user", "content": prompt})
 
-    # Groq supported model identifiers
+    # Ordered by priority from your enabled Groq project models
     candidate_groq_models = [
-        "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant",
-        "llama3-70b-8192"
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+        "llama-3.1-8b-instant"
     ]
     last_err = None
 
@@ -126,7 +125,7 @@ def query_groq(prompt: str) -> str:
             )
             return chat_completion.choices[0].message.content.strip()
         except Exception as err:
-            print(f"Groq {model_name} failed: {err}")
+            print(f"Groq {model_name} attempt failed: {err}")
             last_err = err
             continue
 
@@ -146,21 +145,21 @@ def ask_ai_brain(prompt: str) -> str:
                 conversation_history.append({"role": "assistant", "content": reply})
                 return reply
             except Exception as e:
-                print(f"Gemini key {gemini_key_index + 1} exhausted/error: {e}")
+                print(f"Gemini key {gemini_key_index + 1} exhausted: {e}")
                 gemini_key_index = (gemini_key_index + 1) % len(gemini_keys)
 
-    # 2. Seamless failover to Groq
+    # 2. Instant failover to Groq (openai/gpt-oss-20b)
     if os.getenv("GROQ_API_KEY"):
         try:
-            print("Engaging Groq failover engine...")
+            print("Routing to Groq failover engine...")
             reply = query_groq(prompt)
             conversation_history.append({"role": "user", "content": prompt})
             conversation_history.append({"role": "assistant", "content": reply})
             return reply
         except Exception as groq_err:
-            print(f"Groq engine exception: {groq_err}")
+            print(f"Groq failover exception: {groq_err}")
 
-    return "Apologies Master, our neural connections are temporarily rate-limited. Please give me 30 seconds."
+    return "Apologies Master, both primary and backup cognitive links are temporarily rate-limited. Please allow 30 seconds."
 
 def compute_route_and_distance(origin_str: str, dest_str: str) -> dict:
     try:
