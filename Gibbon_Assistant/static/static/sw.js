@@ -1,11 +1,13 @@
-self.addEventListener('install', (e) => {
+JavaScript
+self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(self.clients.claim());
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener('fetch', (e) => {
-  e.respondWith(fetch(e.request).catch(() => new Response("Offline")));
+self.addEventListener('fetch', (event) => {
+  // Pass network requests through directly
+  event.respondWith(fetch(event.request));
 });
