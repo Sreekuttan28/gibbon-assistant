@@ -6,15 +6,15 @@
   <title>GIBBON AKA ASSISTANT</title>
   <link rel="manifest" href="/static/manifest.json">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23030712' stroke='%2300f0ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='32' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-dasharray='6 4'/%3E%3Ccircle cx='50' cy='50' r='18' fill='%2300f0ff' opacity='0.85'/%3E%3Cpath d='M50 12 L50 24 M50 76 L50 88 M12 50 L24 50 M76 50 L88 50' stroke='%2300f0ff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --primary: #00f0ff;
-      --primary-glow: rgba(0, 240, 255, 0.45);
+      --primary-glow: rgba(0, 240, 255, 0.4);
       --accent: #ff0055;
-      --accent-glow: rgba(255, 0, 85, 0.5);
+      --accent-glow: rgba(255, 0, 85, 0.45);
       --bg: #030712;
-      --panel: rgba(15, 23, 42, 0.75);
+      --panel: rgba(15, 23, 42, 0.85);
       --border: rgba(0, 240, 255, 0.22);
     }
 
@@ -25,45 +25,49 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
     body {
       background-color: var(--bg);
       background-image: 
-        radial-gradient(circle at 50% 12%, rgba(0, 240, 255, 0.12) 0%, transparent 65%),
-        radial-gradient(circle at 85% 85%, rgba(255, 0, 85, 0.08) 0%, transparent 55%),
+        radial-gradient(circle at 50% 10%, rgba(0, 240, 255, 0.12) 0%, transparent 60%),
+        radial-gradient(circle at 85% 90%, rgba(255, 0, 85, 0.08) 0%, transparent 50%),
         linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      background-size: 100% 100%, 100% 100%, 24px 24px, 24px 24px;
       color: #f1f5f9;
       font-family: 'Rajdhani', sans-serif;
-      min-height: 100vh;
-      min-height: 100dvh;
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: space-between;
-      padding: 1rem 1rem calc(1.2rem + env(safe-area-inset-bottom));
-      overflow-x: hidden;
+      padding: env(safe-area-inset-top, 8px) 10px calc(8px + env(safe-area-inset-bottom, 12px));
     }
 
-    /* Ambient Scanline */
+    /* Ambient CRT Scanline */
     body::before {
       content: " ";
       position: fixed;
       inset: 0;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%);
       background-size: 100% 3px;
       pointer-events: none;
       z-index: 99;
     }
 
-    /* Header & Telemetry Grid */
+    /* Header */
     header {
       width: 100%;
-      max-width: 520px;
+      max-width: 480px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.5rem;
+      gap: 4px;
+      flex-shrink: 0;
     }
 
     .hud-header-bar {
@@ -71,19 +75,19 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.4rem 0.8rem;
-      background: rgba(15, 23, 42, 0.5);
+      padding: 4px 10px;
+      background: rgba(15, 23, 42, 0.65);
       border: 1px solid var(--border);
       border-radius: 8px;
-      font-size: 0.75rem;
-      letter-spacing: 1.5px;
+      font-size: 0.68rem;
+      letter-spacing: 1px;
       color: #94a3b8;
     }
 
     .telemetry-chip {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 5px;
     }
 
     .pulse-dot {
@@ -102,15 +106,15 @@
 
     .hud-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.35rem;
+      font-size: 1.05rem;
       font-weight: 900;
-      letter-spacing: 3px;
+      letter-spacing: 2px;
       color: #fff;
-      text-shadow: 0 0 12px var(--primary), 0 0 25px var(--primary-glow);
+      text-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary-glow);
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      margin-top: 0.2rem;
+      gap: 5px;
+      margin-top: 2px;
     }
 
     .hud-title span {
@@ -120,38 +124,40 @@
     /* Main Console */
     main {
       width: 100%;
-      max-width: 520px;
+      max-width: 480px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.9rem;
+      gap: 6px;
       flex: 1;
-      justify-content: center;
-      margin: 0.5rem 0;
+      min-height: 0;
+      justify-content: space-evenly;
     }
 
-    /* Arc Reactor Core */
+    /* Compact Reactor Core */
     .reactor-wrap {
       position: relative;
-      width: 175px;
-      height: 175px;
+      width: 120px;
+      height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
 
     .ring-outer {
       position: absolute;
       inset: 0;
-      border: 2px dashed var(--primary);
+      border: 1.5px dashed var(--primary);
       border-radius: 50%;
       opacity: 0.45;
-      animation: rotateRing 24s linear infinite;
+      animation: rotateRing 22s linear infinite;
     }
 
     .ring-middle {
       position: absolute;
-      inset: 12px;
+      inset: 8px;
       border: 1px solid transparent;
       border-left: 2px solid var(--primary);
       border-right: 2px solid var(--primary);
@@ -161,97 +167,106 @@
 
     .ring-glow-pulse {
       position: absolute;
-      inset: 22px;
+      inset: 15px;
       border-radius: 50%;
       background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
-      opacity: 0.4;
+      opacity: 0.35;
       animation: corePulse 3s infinite ease-in-out;
     }
 
     @keyframes rotateRing { 100% { transform: rotate(360deg); } }
     @keyframes rotateRingRev { 100% { transform: rotate(-360deg); } }
     @keyframes corePulse {
-      0%, 100% { transform: scale(0.95); opacity: 0.3; }
-      50% { transform: scale(1.1); opacity: 0.6; }
+      0%, 100% { transform: scale(0.95); opacity: 0.25; }
+      50% { transform: scale(1.1); opacity: 0.5; }
     }
 
     .reactor-btn {
-      width: 110px;
-      height: 110px;
+      width: 78px;
+      height: 78px;
       border-radius: 50%;
       background: radial-gradient(circle, #0e243d 30%, #030712 100%);
       border: 2px solid var(--primary);
-      box-shadow: 0 0 25px var(--primary-glow), inset 0 0 15px var(--primary-glow);
+      box-shadow: 0 0 18px var(--primary-glow), inset 0 0 10px var(--primary-glow);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       z-index: 10;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.25s ease;
     }
 
     .reactor-btn svg {
-      width: 38px;
-      height: 38px;
+      width: 28px;
+      height: 28px;
       fill: var(--primary);
-      filter: drop-shadow(0 0 8px var(--primary));
-      transition: all 0.3s ease;
+      filter: drop-shadow(0 0 6px var(--primary));
     }
 
     .reactor-btn.listening {
       border-color: var(--accent);
-      box-shadow: 0 0 35px var(--accent-glow), inset 0 0 20px var(--accent-glow);
+      box-shadow: 0 0 25px var(--accent-glow), inset 0 0 14px var(--accent-glow);
       animation: coreVibe 1s infinite alternate ease-in-out;
     }
 
     .reactor-btn.listening svg {
       fill: var(--accent);
-      filter: drop-shadow(0 0 12px var(--accent));
+      filter: drop-shadow(0 0 10px var(--accent));
       transform: scale(1.1);
     }
 
     @keyframes coreVibe {
       from { transform: scale(1); }
-      to { transform: scale(1.05); }
+      to { transform: scale(1.06); }
     }
 
     .live-hearing {
-      font-size: 0.88rem;
+      font-size: 0.78rem;
       color: var(--primary);
-      letter-spacing: 1px;
-      min-height: 1.4rem;
+      letter-spacing: 0.5px;
+      min-height: 1.1rem;
       text-align: center;
       font-style: italic;
+      padding: 0 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 90%;
     }
 
     /* Equalizer Visualizer */
     .wave-box {
       display: flex;
       align-items: center;
-      gap: 4px;
-      height: 22px;
+      gap: 3px;
+      height: 14px;
+      flex-shrink: 0;
     }
 
     .wave-bar {
-      width: 3px;
-      height: 4px;
+      width: 2.5px;
+      height: 3px;
       background: var(--primary);
       border-radius: 2px;
       transition: height 0.1s ease;
-      box-shadow: 0 0 6px var(--primary);
+      box-shadow: 0 0 4px var(--primary);
     }
 
-    /* Holographic Main Card */
+    /* Scrollable Holographic Card */
     .hud-card {
       width: 100%;
       background: var(--panel);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 1.25rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.55);
+      display: flex;
+      flex-direction: column;
+      max-height: 28vh;
+      min-height: 75px;
       position: relative;
     }
 
@@ -264,35 +279,40 @@
 
     .log-speaker {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.75rem;
-      letter-spacing: 2px;
+      font-size: 0.65rem;
+      letter-spacing: 1.5px;
       color: var(--primary);
       text-transform: uppercase;
-      margin-bottom: 0.5rem;
+      margin-bottom: 4px;
       display: flex;
       justify-content: space-between;
+      flex-shrink: 0;
     }
 
     .log-content {
-      font-size: 1.05rem;
-      line-height: 1.5;
+      font-size: 0.92rem;
+      line-height: 1.35;
       color: #e2e8f0;
-      min-height: 52px;
+      overflow-y: auto;
+      flex: 1;
+      padding-right: 4px;
+      -webkit-overflow-scrolling: touch;
     }
 
     .media-holder {
       width: 100%;
-      border-radius: 12px;
+      border-radius: 8px;
       overflow: hidden;
-      margin-top: 0.8rem;
+      margin-top: 6px;
       border: 1px solid var(--border);
       display: none;
+      flex-shrink: 0;
     }
 
     .media-holder img {
       width: 100%;
       height: auto;
-      max-height: 280px;
+      max-height: 180px;
       object-fit: cover;
       display: block;
     }
@@ -300,61 +320,65 @@
     .hud-btn {
       display: none;
       width: 100%;
-      margin-top: 0.85rem;
-      padding: 0.85rem;
-      background: rgba(0, 240, 255, 0.1);
+      margin-top: 6px;
+      padding: 6px;
+      background: rgba(0, 240, 255, 0.12);
       border: 1px solid var(--primary);
       color: var(--primary);
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.8rem;
-      letter-spacing: 1.5px;
+      font-size: 0.7rem;
+      letter-spacing: 1px;
       font-weight: 700;
       text-align: center;
-      border-radius: 8px;
+      border-radius: 6px;
       text-decoration: none;
       text-transform: uppercase;
-      box-shadow: 0 0 15px var(--primary-glow);
+      box-shadow: 0 0 10px var(--primary-glow);
+      flex-shrink: 0;
     }
 
-    /* Quick Directive Chips */
+    /* Quick Chips */
     .quick-chips {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.4rem;
+      gap: 4px;
       justify-content: center;
       width: 100%;
+      flex-shrink: 0;
     }
 
     .chip {
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(15, 23, 42, 0.7);
       border: 1px solid var(--border);
       color: #94a3b8;
-      font-size: 0.78rem;
-      padding: 0.35rem 0.7rem;
-      border-radius: 20px;
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 14px;
       cursor: pointer;
-      transition: all 0.2s;
+      white-space: nowrap;
     }
 
-    .chip:hover, .chip:active {
-      background: rgba(0, 240, 255, 0.15);
+    .chip:active {
+      background: rgba(0, 240, 255, 0.2);
       color: var(--primary);
       border-color: var(--primary);
     }
 
-    /* Footer Command Input */
+    /* Bottom Input Dock */
     .hud-footer {
       width: 100%;
-      max-width: 520px;
+      max-width: 480px;
+      margin: 0 auto;
+      flex-shrink: 0;
     }
 
     .hud-input-row {
       display: flex;
-      gap: 0.5rem;
-      background: rgba(15, 23, 42, 0.85);
+      gap: 5px;
+      background: rgba(15, 23, 42, 0.95);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 0.4rem 0.5rem 0.4rem 1rem;
+      border-radius: 10px;
+      padding: 4px 6px 4px 10px;
       align-items: center;
     }
 
@@ -364,51 +388,58 @@
       border: none;
       color: #fff;
       font-family: 'Rajdhani', sans-serif;
-      font-size: 1.05rem;
+      font-size: 0.95rem;
       outline: none;
+      min-width: 0;
     }
 
     .hud-input-row input::placeholder {
       color: #475569;
+      font-size: 0.85rem;
     }
 
+    /* Stop Button Next to EXEC */
+    .stop-trigger {
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(255, 0, 85, 0.2);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .stop-trigger:active {
+      background: var(--accent);
+      color: #fff;
+      transform: scale(0.95);
+    }
+
+    /* EXEC Button */
     .send-trigger {
-      padding: 0.7rem 1.3rem;
-      border-radius: 8px;
+      padding: 6px 12px;
+      border-radius: 6px;
       background: var(--primary);
       border: none;
       color: #030712;
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 800;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       cursor: pointer;
-      box-shadow: 0 0 15px var(--primary-glow);
+      box-shadow: 0 0 10px var(--primary-glow);
+      white-space: nowrap;
       transition: transform 0.15s ease;
     }
 
     .send-trigger:active {
       transform: scale(0.95);
     }
-
-    .mute-btn {
-  background: rgba(255, 0, 85, 0.15);
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  font-family: 'Orbitron', sans-serif;
-  font-size: 0.7rem;
-  padding: 0.3rem 0.75rem;
-  border-radius: 6px;
-  cursor: pointer;
-  letter-spacing: 1px;
-  transition: all 0.2s ease;
-}
-.mute-btn:hover {
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 0 10px var(--accent-glow);
-}
-
   </style>
 </head>
 <body>
@@ -417,18 +448,14 @@
     <div class="hud-header-bar">
       <div class="telemetry-chip">
         <span class="pulse-dot"></span>
-        <span id="telemetryStatus">CORE: STANDBY</span>
+        <span id="telemetryStatus">STANDBY</span>
       </div>
-      
-      <div id="liveClock">00:00:00 UTC</div>
+      <div id="liveClock">00:00:00</div>
       <div class="telemetry-chip">
-        <span>LATENCY: </span><span id="pingValue" style="color:var(--primary);">12ms</span>
+        <span>LINK: </span><span id="pingValue" style="color:var(--primary);">ONLINE</span>
       </div>
     </div>
     <div class="hud-title">GIBBON <span>AKA</span> ASSISTANT</div>
-    <button id="audioStopBtn" class="mute-btn" title="Stop Voice Playback">
-  🔇 STOP AUDIO
-</button>
   </header>
 
   <main>
@@ -444,10 +471,9 @@
       </button>
     </div>
 
-    <div class="live-hearing" id="liveHearing">Tap reactor once to link neural microphone</div>
+    <div class="live-hearing" id="liveHearing">Tap reactor to awaken link</div>
 
     <div class="wave-box" id="waveBox">
-      <div class="wave-bar"></div><div class="wave-bar"></div>
       <div class="wave-bar"></div><div class="wave-bar"></div>
       <div class="wave-bar"></div><div class="wave-bar"></div>
       <div class="wave-bar"></div><div class="wave-bar"></div>
@@ -456,8 +482,8 @@
 
     <div class="hud-card">
       <div class="log-speaker">
-        <span id="speakerLabel">FEEDBACK MATRIX</span>
-        <span id="timestamp">SYS: ACTIVE</span>
+        <span id="speakerLabel">FEEDBACK</span>
+        <span id="timestamp">SYS: 2.6</span>
       </div>
       <div class="log-content" id="logContent">
         "Tap the reactor core once to initiate voice protocols, Master. I will remember our discussion and follow your directives seamlessly."
@@ -468,29 +494,28 @@
 
     <div class="quick-chips">
       <div class="chip" onclick="sendDirective('Weather forecast for Bangalore')">⚡ Weather</div>
-      <div class="chip" onclick="sendDirective('Distance from Bangalore to Mysore')">📍 Route to Mysore</div>
+      <div class="chip" onclick="sendDirective('Distance from Bangalore to Mysore')">📍 Route</div>
       <div class="chip" onclick="sendDirective('What are my reminders')">📋 Reminders</div>
-      <div class="chip" onclick="sendDirective('Recommend a top rated sci-fi movie')">🎬 Movie Rec</div>
-      <div class="chip" onclick="sendDirective('Clear memory')">🧹 Reset Memory</div>
+      <div class="chip" onclick="sendDirective('Clear memory')">🧹 Reset</div>
     </div>
   </main>
 
-  <footer class="hud-footer">
+<footer class="hud-footer">
     <div class="hud-input-row">
-      <input type="text" id="hudInput" placeholder="Enter directive or say 'Hey Gibbon'..." />
+      <input type="text" id="hudInput" placeholder="Directive or 'Hey Gibbon'..." />
       <button class="send-trigger" id="sendBtn">EXEC</button>
+      <button class="stop-trigger" id="audioStopBtn" title="Stop Audio">🔇 STOP</button>
     </div>
   </footer>
-
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/static/sw.js');
     }
 
-    // Live Clock Display
+    // Live clock
     function updateClock() {
       const now = new Date();
-      document.getElementById('liveClock').textContent = now.toTimeString().split(' ')[0] + ' IST';
+      document.getElementById('liveClock').textContent = now.toTimeString().split(' ')[0];
     }
     setInterval(updateClock, 1000);
     updateClock();
@@ -505,7 +530,7 @@
     const sendBtn = document.getElementById('sendBtn');
     const waveBars = document.querySelectorAll('.wave-bar');
     const liveHearing = document.getElementById('liveHearing');
-    const pingValue = document.getElementById('pingValue');
+    const audioStopBtn = document.getElementById('audioStopBtn');
 
     const wakeAliases = ["gibbon", "given", "gibons", "gibin", "gabon", "kiban", "gibson"];
     let waveInterval;
@@ -513,25 +538,43 @@
     let awaitingDirective = false;
     let silenceTimer = null;
     let accumulatedDirective = "";
+    let currentAudio = null;
+
+    // Stop voice playback instantly
+    audioStopBtn.addEventListener('click', () => {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+      }
+      animateWaves(false);
+      telemetryStatus.textContent = "MUTED";
+      liveHearing.textContent = "Playback silenced.";
+    });
 
     function animateWaves(active) {
       if (active) {
         waveInterval = setInterval(() => {
           waveBars.forEach(b => {
-            b.style.height = `${Math.floor(Math.random() * 18) + 4}px`;
+            b.style.height = `${Math.floor(Math.random() * 12) + 3}px`;
           });
         }, 110);
       } else {
         clearInterval(waveInterval);
-        waveBars.forEach(b => b.style.height = '4px');
+        waveBars.forEach(b => b.style.height = '3px');
       }
     }
 
     async function sendDirective(command) {
       if (!command || command.trim().length < 2) return;
 
-      const t0 = performance.now();
-      telemetryStatus.textContent = "CORE: SYNCHRONIZING";
+      // Halt any ongoing speech before processing new request
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+
+      telemetryStatus.textContent = "SYNCING";
       speakerLabel.textContent = "MASTER DIRECTIVE";
       logContent.textContent = `"${command}"`;
       liveHearing.textContent = "";
@@ -545,9 +588,6 @@
           body: JSON.stringify({ message: command })
         });
         const data = await res.json();
-        
-        const latency = Math.round(performance.now() - t0);
-        pingValue.textContent = `${latency}ms`;
 
         speakerLabel.textContent = "GIBBON CORE";
         logContent.textContent = data.reply;
@@ -562,22 +602,24 @@
           navBtn.href = data.map_link;
         }
 
-        const audio = new Audio(`/api/tts?text=${encodeURIComponent(data.reply)}`);
-        audio.play();
-        audio.onended = () => {
+        currentAudio = new Audio(`/api/tts?text=${encodeURIComponent(data.reply)}`);
+        currentAudio.play().catch(e => console.warn("Audio autoplay blocked:", e));
+
+        currentAudio.onended = () => {
+          currentAudio = null;
           animateWaves(false);
           awaitingDirective = false;
           accumulatedDirective = "";
           micBtn.classList.remove('listening');
-          telemetryStatus.textContent = "CORE: STANDBY (SAY 'HEY GIBBON')";
-          liveHearing.textContent = "Listening for 'Hey Gibbon'...";
+          telemetryStatus.textContent = "LISTENING";
+          liveHearing.textContent = "Say 'Hey Gibbon'...";
         };
       } catch (err) {
         animateWaves(false);
         awaitingDirective = false;
         micBtn.classList.remove('listening');
-        telemetryStatus.textContent = "LINK ANOMALY";
-        logContent.textContent = "Neural connection lost. Confirm Python backend is active.";
+        telemetryStatus.textContent = "LINK LOST";
+        logContent.textContent = "Neural connection lost. Check server status.";
       }
     }
 
@@ -605,8 +647,8 @@
         try {
           recognizer.start();
           isListening = true;
-          telemetryStatus.textContent = "CORE: STANDBY (SAY 'HEY GIBBON')";
-          liveHearing.textContent = "Listening... say 'Hey Gibbon' to wake me.";
+          telemetryStatus.textContent = "STANDBY";
+          liveHearing.textContent = "Listening... say 'Hey Gibbon'";
         } catch (e) {}
       }
 
@@ -625,8 +667,8 @@
           awaitingDirective = true;
           accumulatedDirective = "";
           micBtn.classList.add('listening');
-          telemetryStatus.textContent = "CORE ACTIVE: SPEAK COMMAND";
-          liveHearing.textContent = "I'm listening, Master. Speak your command...";
+          telemetryStatus.textContent = "SPEAK NOW";
+          liveHearing.textContent = "I'm listening, Master...";
         }
       });
 
@@ -649,7 +691,7 @@
           if (triggered) {
             awaitingDirective = true;
             micBtn.classList.add('listening');
-            telemetryStatus.textContent = "CORE ENGAGED: AWAITING DIRECTIVE";
+            telemetryStatus.textContent = "ENGAGED";
 
             for (const alias of wakeAliases) {
               if (heardTotal.includes(alias)) {
@@ -672,7 +714,7 @@
               osc.stop(ctx.currentTime + 0.2);
             } catch (e) {}
 
-            liveHearing.textContent = "Gibbon active! Speak your command...";
+            liveHearing.textContent = "Gibbon active! Speak command...";
           }
         } else {
           if (finalized.trim()) {
@@ -689,7 +731,7 @@
               });
               sendDirective(cleaned || finalCmd);
             }
-          }, 1400);
+          }, 1300);
         }
       };
 
@@ -698,48 +740,14 @@
           isListening = false;
           micBtn.classList.remove('listening');
           telemetryStatus.textContent = "MIC BLOCKED";
-          liveHearing.textContent = "Microphone access blocked. Check browser settings.";
+          liveHearing.textContent = "Microphone access blocked.";
         }
       };
     } else {
       micBtn.style.display = 'none';
-      telemetryStatus.textContent = "BROWSER UNSUPPORTED";
-      liveHearing.textContent = "Speech API unsupported. Use Chrome, Edge, or Safari.";
+      telemetryStatus.textContent = "NO SPEECH API";
+      liveHearing.textContent = "Use typing interface below.";
     }
-
-    let currentAudio = null;
-
-// Stop audio button listener
-const audioStopBtn = document.getElementById('audioStopBtn');
-audioStopBtn.addEventListener('click', () => {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.currentTime = 0;
-    currentAudio = null;
-  }
-  animateWaves(false);
-  telemetryStatus.textContent = "CORE: MUTED";
-  liveHearing.textContent = "Voice playback silenced.";
-});
-
-// Update inside sendDirective() where audio plays:
-if (currentAudio) {
-  currentAudio.pause();
-  currentAudio = null;
-}
-
-currentAudio = new Audio(`/api/tts?text=${encodeURIComponent(data.reply)}`);
-currentAudio.play();
-
-currentAudio.onended = () => {
-  currentAudio = null;
-  animateWaves(false);
-  awaitingDirective = false;
-  accumulatedDirective = "";
-  micBtn.classList.remove('listening');
-  telemetryStatus.textContent = "CORE: STANDBY (SAY 'HEY GIBBON')";
-  liveHearing.textContent = "Listening for 'Hey Gibbon'...";
-};
   </script>
 </body>
 </html>
