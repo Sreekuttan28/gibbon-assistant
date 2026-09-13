@@ -27,7 +27,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v22")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v23")
 IST = ZoneInfo("Asia/Kolkata")
 
 def get_ist_now() -> datetime:
@@ -72,9 +72,10 @@ def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> st
         f"The current real-world date and time is {now_str} (Indian Standard Time). "
         "CRITICAL GUIDELINES: "
         "1. Write in clear, straightforward English that is effortless to understand for everyone. "
-        "2. When asked for recent tech, products, or current news, base your answers on verified real-world facts rather than outdated historical data. "
-        "3. Explain things completely and logically. Do not artificially truncate your response. "
-        "4. TIMING & SCHEDULES: Calculate step-by-step arithmetic. If someone sleeps at 2:30 AM, 7.5 to 8 hours of sleep means waking between 10:00 AM and 10:30 AM."
+        "2. When presenting lists, specifications, pricing, comparisons, or schedules, feel free to use clean markdown tables. "
+        "3. When asked for recent tech, products, or current news, base your answers on verified real-world facts rather than outdated historical data. "
+        "4. Explain things completely and logically without artificially truncating your response. "
+        "5. TIMING & SCHEDULES: Calculate step-by-step arithmetic. If someone sleeps at 2:30 AM, 7.5 to 8 hours of sleep means waking between 10:00 AM and 10:30 AM."
     )
     if live_context:
         instruction += f"\n\nLIVE SEARCH GROUNDING DATA:\n{live_context}"
@@ -143,7 +144,7 @@ def query_groq(prompt: str, user_id: str, user_name: str, live_context: str = ""
                 messages=messages,
                 model=model_name,
                 temperature=0.3,
-                max_tokens=900
+                max_tokens=950
             )
             return chat_completion.choices[0].message.content.strip()
         except Exception as err:
@@ -216,7 +217,6 @@ def get_live_forecast(city_name: str, user_name: str) -> str:
         if not loc:
             return f"{call_name}, I could not pinpoint coordinates for {city_name}."
 
-        # Reliable Open-Meteo Current & Daily API query
         url = (
             f"https://api.open-meteo.com/v1/forecast?"
             f"latitude={loc.latitude}&longitude={loc.longitude}"
@@ -226,7 +226,6 @@ def get_live_forecast(city_name: str, user_name: str) -> str:
         )
         res = requests.get(url, timeout=10).json()
 
-        # Handle both modern 'current' and fallback 'current_weather'
         current_data = res.get("current") or res.get("current_weather", {})
         temp = current_data.get("temperature_2m")
         if temp is None:
@@ -340,7 +339,6 @@ async def process_command(request: Request):
             return {"reply": f"Here are your pending reminders, {user_name}: {tasks}."}
         return {"reply": f"Your reminder list is completely empty right now, {user_name}."}
 
-    # AUTOMATIC REAL-TIME GROUNDING FOR LATEST INFORMATION
     live_context = ""
     needs_live_data = any(w in lower for w in [
         "latest", "newest", "current", "release", "released", "launch", 
@@ -358,12 +356,10 @@ async def process_command(request: Request):
 
 @app.get("/api/tts")
 async def text_to_speech(text: str):
-    # Strip markdown symbols, pipes, bullets, code fences, and dashes so neural audio reads seamlessly
     clean_text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
     clean_text = re.sub(r'[*#_`|~>—–-]', ' ', clean_text)
     clean_text = re.sub(r'\s+', ' ', clean_text).strip()
     
-    # Support full-length detailed answers without premature truncation
     spoken_text = clean_text[:4000]
 
     candidate_voices = ["en-US-AvaNeural", "en-US-AriaNeural", "en-US-JennyNeural"]
