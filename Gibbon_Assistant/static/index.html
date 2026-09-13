@@ -1425,6 +1425,12 @@
       telemetryStatus.textContent = "NO SPEECH API";
       liveHearing.textContent = "Use typing interface below.";
     }
+    function updateClock() {
+  const options = { timeZone: "Asia/Kolkata", hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+  document.getElementById('liveClock').textContent = new Intl.DateTimeFormat('en-GB', options).format(new Date()) + " IST";
+}
+setInterval(updateClock, 1000);
+updateClock();
   </script>
 </body>
 </html>
