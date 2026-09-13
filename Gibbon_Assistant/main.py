@@ -361,8 +361,9 @@ async def text_to_speech(text: str):
     communicate = edge_tts.Communicate(
         spoken_text, 
         voice="en-GB-LibbyNeural", 
-        rate="+5%", 
-        volume="-10%"
+        rate="-8%",
+        pitch="-4Hz",
+        volume="-15%"
     )
     audio_data = bytearray()
     async for chunk in communicate.stream():
