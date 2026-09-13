@@ -17,7 +17,8 @@ import edge_tts
 app = FastAPI(title="GIBBON AKA ASSISTANT")
 
 # ==================== CONFIGURATION ====================
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+ai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 # =======================================================
 
 ai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE" else None
