@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mokuttan Labs">
   <title>GIBBON // MOKUTTAN LABS</title>
   <link rel="manifest" href="/static/manifest.json">
+  <link rel="apple-touch-icon" href="/static/logo.png">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23030712' stroke='%2300f0ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='32' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-dasharray='6 4'/%3E%3Ccircle cx='50' cy='50' r='18' fill='%2300f0ff' opacity='0.85'/%3E%3Cpath d='M50 12 L50 24 M50 76 L50 88 M12 50 L24 50 M76 50 L88 50' stroke='%2300f0ff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -13,9 +17,8 @@
       --primary-glow: rgba(0, 240, 255, 0.55);
       --accent: #ff0055;
       --accent-glow: rgba(255, 0, 85, 0.6);
-      --gold: #facc15;
       --bg: #030712;
-      --panel: rgba(11, 19, 36, 0.9);
+      --panel: rgba(11, 19, 36, 0.92);
       --panel-border: rgba(0, 240, 255, 0.35);
       --sidebar-width: 295px;
     }
@@ -46,7 +49,6 @@
       display: flex;
     }
 
-    /* Keep scanlines subtle and behind high-priority badges */
     body::before {
       content: " ";
       position: fixed;
@@ -97,7 +99,6 @@
       gap: 12px;
     }
 
-    /* High-contrast, dark-glass sidebar emblem */
     .brand-avatar {
       width: 54px;
       height: 54px;
@@ -117,7 +118,7 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.6)) brightness(1.18);
+      filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.6)) brightness(1.2);
     }
 
     .brand-avatar .avatar-fallback {
@@ -389,7 +390,6 @@
       padding-top: 6px;
     }
 
-    /* CENTER STAGE: EMBLEM PODIUM & ANIMATED KID LUFFY */
     .mascot-stage {
       display: flex;
       align-items: center;
@@ -401,7 +401,6 @@
       z-index: 20;
     }
 
-    /* ENLARGED HIGH-DEFINITION LOGO PODIUM */
     .reactor-podium {
       position: relative;
       width: 96px;
@@ -469,7 +468,6 @@
       animation-duration: 4s;
     }
 
-    /* INTERACTIVE KID LUFFY FULL ANIMATION ENGINE */
     .luffy-widget {
       position: relative;
       width: 82px;
@@ -535,24 +533,18 @@
       animation: luffyIdleBreathing 3.6s ease-in-out infinite;
     }
 
-    /* Luffy Behavioral Class Animations */
-
-    /* 1. Curious / Inquisitive (When user is typing or asking) */
     .luffy-widget.curious .luffy-svg {
       animation: luffyCuriousTilt 0.8s ease-in-out infinite alternate !important;
     }
 
-    /* 2. Deep Thinking / Concentrating (While waiting for AI response) */
     .luffy-widget.thinking .luffy-svg {
       animation: luffyConcentrating 1.1s ease-in-out infinite alternate !important;
     }
 
-    /* 3. Focused / Cheerful Listening (When Gibbon is speaking) */
     .luffy-widget.focused .luffy-svg {
       animation: luffyJoyfulBounce 0.5s ease-in-out infinite alternate !important;
     }
 
-    /* Keyframes */
     @keyframes luffyIdleBreathing {
       0%, 100% { transform: translateY(0) scale(1, 1); }
       50% { transform: translateY(-4px) scale(1.02, 0.98); }
@@ -638,34 +630,30 @@
       border: 1px solid var(--panel-border);
       display: none;
       flex-shrink: 0;
+      position: relative;
     }
 
     .media-holder img {
       width: 100%;
       height: auto;
-      max-height: 160px;
+      max-height: 180px;
       object-fit: cover;
       display: block;
     }
 
-    .hud-btn {
-      display: none;
-      width: 100%;
-      margin-top: 6px;
-      padding: 7px;
-      background: rgba(0, 240, 255, 0.12);
+    .media-download-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(3, 7, 18, 0.85);
       border: 1px solid var(--primary);
       color: var(--primary);
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.74rem;
-      letter-spacing: 1px;
-      font-weight: 700;
-      text-align: center;
+      font-size: 0.72rem;
+      padding: 4px 8px;
       border-radius: 6px;
       text-decoration: none;
-      text-transform: uppercase;
-      box-shadow: 0 0 12px var(--primary-glow);
-      flex-shrink: 0;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 1px;
     }
 
     .live-hearing {
@@ -709,7 +697,7 @@
     }
 
     .chip {
-      background: rgba(15, 23, 42, 0.7);
+      background: rgba(15, 23, 42, 0.75);
       border: 1px solid var(--panel-border);
       color: #94a3b8;
       font-size: 0.76rem;
@@ -871,7 +859,7 @@
         </div>
         <div class="brand-meta">
           <h2>MOKUTTAN LABS</h2>
-          <span>GIBBON NEURAL CORE V2.7</span>
+          <span>GIBBON NEURAL CORE V2.8</span>
         </div>
       </div>
       <button class="close-sidebar-btn" id="closeSidebarBtn" aria-label="Close Drawer">✕</button>
@@ -913,9 +901,7 @@
     </header>
 
     <main>
-      <!-- Center Stage: High-Contrast Dark-Glass Emblem + Interactive Kid Luffy -->
       <div class="mascot-stage">
-        <!-- Enlarged, high-contrast dark-glass emblem -->
         <div class="reactor-podium" id="reactorPodium">
           <div class="reactor-ring-outer"></div>
           <div class="reactor-ring-inner"></div>
@@ -925,50 +911,38 @@
           </div>
         </div>
 
-        <!-- Fully Interactive Kid Luffy Character -->
         <div class="luffy-widget" id="luffyWidget" title="Tap Kid Luffy!">
           <div class="luffy-bubble" id="luffyBubble">Shishishi!</div>
           
           <svg class="luffy-svg" viewBox="0 0 100 120">
-            <!-- Straw Hat Brim Back -->
             <ellipse cx="50" cy="40" rx="46" ry="14" fill="#eab308" stroke="#854d0e" stroke-width="2.5"/>
             <path d="M18 39 Q50 34 82 39" stroke="#b91c1c" stroke-width="4.5" fill="none"/>
-            <!-- Hat Crown -->
             <path d="M26 38 C28 14, 72 14, 74 38 Z" fill="#facc15" stroke="#854d0e" stroke-width="2"/>
             <path d="M26 36 Q50 33 74 36" stroke="#dc2626" stroke-width="5.5" fill="none"/>
 
-            <!-- Hair Behind Ears -->
             <path d="M24 46 Q16 56 26 66 Q20 70 30 76" fill="#0f172a"/>
             <path d="M76 46 Q84 56 74 66 Q80 70 70 76" fill="#0f172a"/>
 
-            <!-- Face -->
             <circle cx="50" cy="62" r="26" fill="#fed7aa" stroke="#1e293b" stroke-width="2"/>
             
-            <!-- Ears -->
             <circle cx="23" cy="64" r="5" fill="#fbcfe8" stroke="#1e293b" stroke-width="1.6"/>
             <circle cx="77" cy="64" r="5" fill="#fbcfe8" stroke="#1e293b" stroke-width="1.6"/>
 
-            <!-- Front Spiky Hair -->
             <path d="M28 46 L34 56 L42 47 L50 58 L58 48 L66 57 L72 47 Z" fill="#090d16"/>
 
-            <!-- Eyes -->
             <ellipse cx="38" cy="60" rx="3.6" ry="4.8" fill="#090d16"/>
             <ellipse cx="62" cy="60" rx="3.6" ry="4.8" fill="#090d16"/>
             <circle cx="39.5" cy="58.2" r="1.3" fill="#ffffff"/>
             <circle cx="63.5" cy="58.2" r="1.3" fill="#ffffff"/>
 
-            <!-- Left Eye Stitched Scar -->
             <path d="M34 68 L42 68 M36 66 L36 70 M40 66 L40 70" stroke="#1e293b" stroke-width="1.3" stroke-linecap="round"/>
 
-            <!-- Cheeks Blush -->
             <ellipse cx="32" cy="65" rx="3.8" ry="2.2" fill="#f43f5e" opacity="0.65"/>
             <ellipse cx="68" cy="65" rx="3.8" ry="2.2" fill="#f43f5e" opacity="0.65"/>
 
-            <!-- Signature Grin -->
             <path d="M40 72 Q50 82 60 72 Z" fill="#ffffff" stroke="#090d16" stroke-width="1.8"/>
             <path d="M44 75 Q50 78 56 75" stroke="#ef4444" stroke-width="1.3" fill="none"/>
 
-            <!-- Red Sleeveless Vest -->
             <path d="M34 88 L66 88 L72 115 L28 115 Z" fill="#ef4444" stroke="#991b1b" stroke-width="2"/>
             <path d="M43 88 L50 102 L57 88 Z" fill="#fed7aa"/>
           </svg>
@@ -982,7 +956,6 @@
         </div>
         <div class="log-content" id="logContent">"Hello Chief! Systems online at Mokuttan Labs. Standing by for instructions."</div>
         <div class="media-holder" id="mediaHolder"></div>
-        <a href="#" target="_blank" class="hud-btn" id="navBtn">Open Plotted Coordinates</a>
       </div>
 
       <div class="live-hearing" id="liveHearing">Tap mic or say 'Hey Gibbon'</div>
@@ -994,11 +967,12 @@
         <div class="wave-bar"></div><div class="wave-bar"></div>
       </div>
 
+      <!-- Quick Action Chips -->
       <div class="quick-chips">
         <div class="chip" onclick="sendDirective('Weather forecast for Bangalore')">⚡ Weather</div>
-        <div class="chip" onclick="sendDirective('Distance from Bangalore to Mysore')">📍 Route</div>
+        <div class="chip" onclick="sendDirective('What is the current date and time')">📅 Date & Time</div>
         <div class="chip" onclick="sendDirective('What are my reminders')">📋 Reminders</div>
-        <div class="chip" onclick="startNewSession()">🧹 Clear All</div>
+        <div class="chip" onclick="startNewSession()">🧹 Clear</div>
       </div>
     </main>
 
@@ -1042,7 +1016,6 @@
     const logContent = document.getElementById('logContent');
     const speakerLabel = document.getElementById('speakerLabel');
     const mediaHolder = document.getElementById('mediaHolder');
-    const navBtn = document.getElementById('navBtn');
     const hudInput = document.getElementById('hudInput');
     const sendBtn = document.getElementById('sendBtn');
     const waveBars = document.querySelectorAll('.wave-bar');
@@ -1066,7 +1039,6 @@
     let currentAudio = null;
     let recognizer = null;
 
-    // Luffy Interactive Dialogue & Life Cycle Engine
     const luffyQuotes = [
       "Shishishi!",
       "Meat!! 🍖",
@@ -1108,7 +1080,6 @@
       if (state) luffyWidget.classList.add(state);
     }
 
-    // Dynamic state listener on user typing
     hudInput.addEventListener('input', () => {
       if (hudInput.value.trim().length > 0) {
         setLuffyState('curious');
@@ -1117,7 +1088,6 @@
       }
     });
 
-    // Autonomous Idle Animation Interval (Every 7–11s Luffy does a quirky action)
     setInterval(() => {
       if (!currentAudio && !isListening && hudInput.value.trim().length === 0) {
         const actions = ['curious', 'thinking'];
@@ -1191,6 +1161,7 @@
       } catch (e) {}
       speakerLabel.textContent = "MOKUTTAN LABS";
       logContent.textContent = "Memory cleared, Chief. Ready for a new directive.";
+      mediaHolder.style.display = "none";
       triggerLuffyAction("Fresh start!");
       closeSidebar();
     }
@@ -1240,9 +1211,8 @@
       }
     }
 
-    // Direct High-Definition Neural Audio Playback
     function playVoice(text, onComplete) {
-      const cleanText = text.replace(/[*#_`]/g, '').trim();
+      const cleanText = text.replace(/[*#_`"]/g, '').trim();
       setLuffyState('focused');
 
       if (currentAudio) {
@@ -1253,7 +1223,7 @@
       currentAudio = new Audio(`/api/tts?text=${encodeURIComponent(cleanText)}`);
       
       currentAudio.play().catch(err => {
-        console.warn("Audio playback interrupted or blocked:", err);
+        console.warn("Audio playback notice:", err);
         setLuffyState(null);
         onComplete();
       });
@@ -1287,10 +1257,8 @@
       speakerLabel.textContent = "CHIEF DIRECTIVE";
       logContent.textContent = `"${command}"`;
       liveHearing.textContent = "";
-      navBtn.style.display = "none";
+      mediaHolder.style.display = "none";
       animateWaves(true);
-      
-      // Luffy Enters Thinking / Concentration Mode while AI processes
       setLuffyState('thinking');
 
       try {
@@ -1308,12 +1276,10 @@
 
         if (data.media_url) {
           mediaHolder.style.display = "block";
-          mediaHolder.innerHTML = `<img src="${data.media_url}" alt="Visual Output" />`;
-        }
-
-        if (data.map_link) {
-          navBtn.style.display = "block";
-          navBtn.href = data.map_link;
+          mediaHolder.innerHTML = `
+            <img src="${data.media_url}" alt="Neural Image" />
+            <a href="${data.media_url}" download="gibbon_render.png" class="media-download-btn">⬇ SAVE HD</a>
+          `;
         }
 
         playVoice(data.reply, () => {
