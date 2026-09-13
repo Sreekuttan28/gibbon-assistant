@@ -303,7 +303,14 @@ async def process_command(request: Request):
 
 @app.get("/api/tts")
 async def text_to_speech(text: str):
-    communicate = edge_tts.Communicate(text, "en-US-ChristopherNeural")
+    # 'en-GB-RyanNeural' delivers a smooth, calm JARVIS-style tone
+    # rate="-4%" softens cadence; volume="-15%" lowers sharp vocal punch
+    communicate = edge_tts.Communicate(
+        text, 
+        voice="en-GB-RyanNeural", 
+        rate="-4%", 
+        volume="-15%"
+    )
     audio_data = bytearray()
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
