@@ -5,19 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>GIBBON // MOKUTTAN LABS</title>
   <link rel="manifest" href="/static/manifest.json">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23030712' stroke='%2300f0ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='32' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-dasharray='6 4'/%3E%3Ccircle cx='50' cy='50' r='18' fill='%2300f0ff' opacity='0.85'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23030712' stroke='%2300f0ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='32' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-dasharray='6 4'/%3E%3Ccircle cx='50' cy='50' r='18' fill='%2300f0ff' opacity='0.85'/%3E%3Cpath d='M50 12 L50 24 M50 76 L50 88 M12 50 L24 50 M76 50 L88 50' stroke='%2300f0ff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --primary: #00f0ff;
-      --primary-glow: rgba(0, 240, 255, 0.45);
+      --primary-glow: rgba(0, 240, 255, 0.55);
       --accent: #ff0055;
-      --accent-glow: rgba(255, 0, 85, 0.5);
-      --straw-yellow: #facc15;
-      --luffy-red: #ef4444;
+      --accent-glow: rgba(255, 0, 85, 0.6);
+      --gold: #facc15;
       --bg: #030712;
-      --panel: rgba(13, 20, 36, 0.88);
-      --panel-border: rgba(0, 240, 255, 0.28);
+      --panel: rgba(11, 19, 36, 0.9);
+      --panel-border: rgba(0, 240, 255, 0.35);
       --sidebar-width: 295px;
     }
 
@@ -39,14 +38,15 @@
 
     body {
       background-image: 
-        radial-gradient(circle at 50% 12%, rgba(0, 240, 255, 0.14) 0%, transparent 62%),
-        radial-gradient(circle at 85% 90%, rgba(255, 0, 85, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 50% 12%, rgba(0, 240, 255, 0.16) 0%, transparent 62%),
+        radial-gradient(circle at 85% 90%, rgba(255, 0, 85, 0.1) 0%, transparent 50%),
         linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
       background-size: 100% 100%, 100% 100%, 26px 26px, 26px 26px;
       display: flex;
     }
 
+    /* Keep scanlines subtle and behind high-priority badges */
     body::before {
       content: " ";
       position: fixed;
@@ -54,14 +54,14 @@
       background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%);
       background-size: 100% 3px;
       pointer-events: none;
-      z-index: 99;
+      z-index: 5;
     }
 
     .sidebar-backdrop {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(4px);
       z-index: 95;
     }
@@ -72,7 +72,7 @@
 
     .hud-sidebar {
       width: var(--sidebar-width);
-      background: rgba(10, 16, 30, 0.96);
+      background: rgba(8, 14, 28, 0.98);
       border-right: 1px solid var(--panel-border);
       backdrop-filter: blur(16px);
       display: flex;
@@ -88,7 +88,7 @@
       align-items: center;
       justify-content: space-between;
       padding-bottom: 14px;
-      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+      border-bottom: 1px solid rgba(0, 240, 255, 0.25);
     }
 
     .brand-left {
@@ -97,18 +97,18 @@
       gap: 12px;
     }
 
-    /* High-Visibility Sidebar Emblem */
+    /* High-contrast, dark-glass sidebar emblem */
     .brand-avatar {
-      width: 52px;
-      height: 52px;
-      border-radius: 12px;
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
       border: 2px solid var(--primary);
-      box-shadow: 0 0 16px var(--primary-glow), inset 0 0 10px rgba(0, 240, 255, 0.3);
+      box-shadow: 0 0 16px var(--primary-glow);
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #ffffff;
-      padding: 4px;
+      background: radial-gradient(circle, #0e1e38 0%, #040914 100%);
+      padding: 6px;
       overflow: hidden;
       flex-shrink: 0;
     }
@@ -117,14 +117,14 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+      filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.6)) brightness(1.18);
     }
 
     .brand-avatar .avatar-fallback {
       font-family: 'Orbitron', sans-serif;
       font-size: 1rem;
       font-weight: 900;
-      color: #030712;
+      color: var(--primary);
     }
 
     .brand-meta h2 {
@@ -159,7 +159,7 @@
 
     .new-chat-btn {
       flex: 1;
-      background: rgba(0, 240, 255, 0.1);
+      background: rgba(0, 240, 255, 0.12);
       border: 1px solid var(--primary);
       color: var(--primary);
       font-family: 'Orbitron', sans-serif;
@@ -233,7 +233,7 @@
 
     .history-item:hover {
       border-color: var(--primary);
-      background: rgba(0, 240, 255, 0.12);
+      background: rgba(0, 240, 255, 0.14);
       transform: translateX(4px);
     }
 
@@ -260,6 +260,7 @@
       position: relative;
       min-width: 0;
       height: 100%;
+      z-index: 10;
     }
 
     header {
@@ -318,44 +319,44 @@
       50% { opacity: 1; transform: scale(1.2); }
     }
 
-    /* Enhanced Header Branding with Clear Emblem */
     .hud-header-brand-wrap {
       display: flex;
       align-items: center;
       gap: 12px;
       margin-top: 4px;
-      background: rgba(10, 18, 36, 0.65);
-      border: 1px solid rgba(0, 240, 255, 0.35);
+      background: rgba(10, 18, 36, 0.75);
+      border: 1px solid rgba(0, 240, 255, 0.4);
       padding: 6px 16px;
       border-radius: 30px;
-      box-shadow: 0 4px 18px rgba(0, 240, 255, 0.12);
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15);
     }
 
     .header-logo-badge {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
       border: 1.5px solid var(--primary);
-      background: #ffffff;
-      box-shadow: 0 0 12px var(--primary-glow);
+      background: radial-gradient(circle, #0e1e38 0%, #040914 100%);
+      box-shadow: 0 0 14px var(--primary-glow);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      padding: 2px;
+      padding: 4px;
     }
 
     .header-logo-badge img {
       width: 100%;
       height: 100%;
       object-fit: contain;
+      filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.5)) brightness(1.2);
     }
 
     .header-logo-badge span {
       font-family: 'Orbitron', sans-serif;
       font-size: 0.72rem;
       font-weight: 900;
-      color: #030712;
+      color: var(--primary);
     }
 
     .hud-title {
@@ -381,29 +382,30 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       flex: 1;
       min-height: 0;
       justify-content: flex-start;
       padding-top: 6px;
     }
 
-    /* Interactive Center Stage: Logo Podium + Kid Luffy Mascot */
+    /* CENTER STAGE: EMBLEM PODIUM & ANIMATED KID LUFFY */
     .mascot-stage {
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
-      gap: 20px;
+      gap: 28px;
       margin-bottom: 2px;
       flex-shrink: 0;
       position: relative;
+      z-index: 20;
     }
 
-    /* Big Glowing Emblem Reactor */
+    /* ENLARGED HIGH-DEFINITION LOGO PODIUM */
     .reactor-podium {
       position: relative;
-      width: 88px;
-      height: 88px;
+      width: 96px;
+      height: 96px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -411,54 +413,55 @@
 
     .reactor-ring-outer {
       position: absolute;
-      inset: -4px;
+      inset: -6px;
       border-radius: 50%;
       border: 2px dashed var(--primary);
-      opacity: 0.7;
-      animation: spinClockwise 14s linear infinite;
+      opacity: 0.75;
+      animation: spinClockwise 12s linear infinite;
     }
 
     .reactor-ring-inner {
       position: absolute;
-      inset: 3px;
+      inset: 2px;
       border-radius: 50%;
       border: 1.5px solid rgba(255, 0, 85, 0.45);
       border-top-color: var(--accent);
-      animation: spinCounter 7s linear infinite;
+      animation: spinCounter 6s linear infinite;
     }
 
     .reactor-core-logo {
-      width: 68px;
-      height: 68px;
-      border-radius: 50%;
+      width: 78px;
+      height: 78px;
+      border-radius: 20px;
       border: 2.5px solid var(--primary);
-      background: #ffffff;
+      background: radial-gradient(circle, #0e203c 0%, #030814 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 20px var(--primary-glow), inset 0 0 10px rgba(0, 240, 255, 0.35);
+      box-shadow: 0 0 24px var(--primary-glow), inset 0 0 14px rgba(0, 240, 255, 0.35);
       overflow: hidden;
       padding: 6px;
       z-index: 2;
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .reactor-core-logo img {
       width: 100%;
       height: 100%;
       object-fit: contain;
+      filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.65)) brightness(1.2) contrast(1.15);
     }
 
     .reactor-core-logo span {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.95rem;
+      font-size: 1.1rem;
       font-weight: 900;
-      color: #030712;
+      color: var(--primary);
     }
 
     .reactor-podium.active .reactor-core-logo {
-      transform: scale(1.12);
-      box-shadow: 0 0 26px var(--accent-glow), 0 0 34px var(--primary-glow);
+      transform: scale(1.1);
+      box-shadow: 0 0 30px var(--accent-glow), 0 0 35px var(--primary-glow);
     }
 
     .reactor-podium.active .reactor-ring-outer {
@@ -466,45 +469,44 @@
       animation-duration: 4s;
     }
 
-    /* KID LUFFY INTERACTIVE CHARACTER */
+    /* INTERACTIVE KID LUFFY FULL ANIMATION ENGINE */
     .luffy-widget {
       position: relative;
-      width: 76px;
-      height: 92px;
+      width: 82px;
+      height: 98px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
-      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       user-select: none;
     }
 
     .luffy-widget:hover {
-      transform: scale(1.08) translateY(-4px);
+      transform: scale(1.1) translateY(-4px);
     }
 
     .luffy-widget:active {
       transform: scale(0.92);
     }
 
-    /* Anime Speech Bubble */
     .luffy-bubble {
       position: absolute;
-      top: -24px;
+      top: -26px;
       background: #ffffff;
       color: #030712;
       font-weight: 800;
-      font-size: 0.65rem;
-      padding: 2px 7px;
-      border-radius: 10px;
+      font-size: 0.68rem;
+      padding: 3px 8px;
+      border-radius: 12px;
       border: 1.5px solid #030712;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
       white-space: nowrap;
       opacity: 0;
       transform: translateY(4px);
       transition: all 0.2s ease;
       pointer-events: none;
-      z-index: 10;
+      z-index: 30;
     }
 
     .luffy-bubble::after {
@@ -525,37 +527,51 @@
       transform: translateY(0);
     }
 
-    /* SVG Character Body */
     .luffy-svg {
       width: 100%;
       height: 100%;
-      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
-      animation: luffyIdle 3.2s ease-in-out infinite;
+      filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.7));
       transform-origin: bottom center;
+      animation: luffyIdleBreathing 3.6s ease-in-out infinite;
     }
 
-    /* Luffy States */
-    .luffy-widget.listening .luffy-svg {
-      animation: luffyCurious 1.2s ease-in-out infinite alternate;
+    /* Luffy Behavioral Class Animations */
+
+    /* 1. Curious / Inquisitive (When user is typing or asking) */
+    .luffy-widget.curious .luffy-svg {
+      animation: luffyCuriousTilt 0.8s ease-in-out infinite alternate !important;
     }
 
-    .luffy-widget.speaking .luffy-svg {
-      animation: luffyBounce 0.6s ease-in-out infinite alternate;
+    /* 2. Deep Thinking / Concentrating (While waiting for AI response) */
+    .luffy-widget.thinking .luffy-svg {
+      animation: luffyConcentrating 1.1s ease-in-out infinite alternate !important;
     }
 
-    @keyframes luffyIdle {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-3px) rotate(1.5deg); }
+    /* 3. Focused / Cheerful Listening (When Gibbon is speaking) */
+    .luffy-widget.focused .luffy-svg {
+      animation: luffyJoyfulBounce 0.5s ease-in-out infinite alternate !important;
     }
 
-    @keyframes luffyCurious {
-      0% { transform: rotate(-6deg) translateY(-2px); }
-      100% { transform: rotate(6deg) translateY(-4px); }
+    /* Keyframes */
+    @keyframes luffyIdleBreathing {
+      0%, 100% { transform: translateY(0) scale(1, 1); }
+      50% { transform: translateY(-4px) scale(1.02, 0.98); }
     }
 
-    @keyframes luffyBounce {
+    @keyframes luffyCuriousTilt {
+      0% { transform: rotate(-7deg) translateY(-3px); }
+      100% { transform: rotate(7deg) translateY(-5px); }
+    }
+
+    @keyframes luffyConcentrating {
+      0% { transform: translateY(-2px) rotate(-3deg); }
+      50% { transform: translateY(-7px) rotate(3deg); }
+      100% { transform: translateY(-4px) rotate(-2deg); }
+    }
+
+    @keyframes luffyJoyfulBounce {
       0% { transform: translateY(0) scale(1, 1); }
-      100% { transform: translateY(-7px) scale(1.04, 0.96); }
+      100% { transform: translateY(-9px) scale(1.06, 0.94); }
     }
 
     @keyframes spinClockwise {
@@ -725,7 +741,7 @@
       display: flex;
       align-items: center;
       background: #101726;
-      border: 1px solid rgba(0, 240, 255, 0.32);
+      border: 1px solid rgba(0, 240, 255, 0.35);
       border-radius: 28px;
       padding: 4px 6px 4px 14px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
@@ -897,9 +913,9 @@
     </header>
 
     <main>
-      <!-- High-Tech Center Stage: Logo Podium + Kid Luffy Mascot -->
+      <!-- Center Stage: High-Contrast Dark-Glass Emblem + Interactive Kid Luffy -->
       <div class="mascot-stage">
-        <!-- Enlarged & Highly Illuminated Emblem Reactor -->
+        <!-- Enlarged, high-contrast dark-glass emblem -->
         <div class="reactor-podium" id="reactorPodium">
           <div class="reactor-ring-outer"></div>
           <div class="reactor-ring-inner"></div>
@@ -909,52 +925,51 @@
           </div>
         </div>
 
-        <!-- Interactive Kid Luffy Mascot -->
+        <!-- Fully Interactive Kid Luffy Character -->
         <div class="luffy-widget" id="luffyWidget" title="Tap Kid Luffy!">
           <div class="luffy-bubble" id="luffyBubble">Shishishi!</div>
           
           <svg class="luffy-svg" viewBox="0 0 100 120">
             <!-- Straw Hat Brim Back -->
-            <ellipse cx="50" cy="40" rx="46" ry="14" fill="#eab308" stroke="#a16207" stroke-width="2.5"/>
+            <ellipse cx="50" cy="40" rx="46" ry="14" fill="#eab308" stroke="#854d0e" stroke-width="2.5"/>
             <path d="M18 39 Q50 34 82 39" stroke="#b91c1c" stroke-width="4.5" fill="none"/>
             <!-- Hat Crown -->
-            <path d="M26 38 C28 14, 72 14, 74 38 Z" fill="#facc15" stroke="#a16207" stroke-width="2"/>
-            <path d="M26 36 Q50 33 74 36" stroke="#dc2626" stroke-width="5" fill="none"/>
+            <path d="M26 38 C28 14, 72 14, 74 38 Z" fill="#facc15" stroke="#854d0e" stroke-width="2"/>
+            <path d="M26 36 Q50 33 74 36" stroke="#dc2626" stroke-width="5.5" fill="none"/>
 
             <!-- Hair Behind Ears -->
-            <path d="M24 46 Q16 56 26 66 Q20 70 30 76" fill="#111827"/>
-            <path d="M76 46 Q84 56 74 66 Q80 70 70 76" fill="#111827"/>
+            <path d="M24 46 Q16 56 26 66 Q20 70 30 76" fill="#0f172a"/>
+            <path d="M76 46 Q84 56 74 66 Q80 70 70 76" fill="#0f172a"/>
 
-            <!-- Kid Face -->
-            <circle cx="50" cy="62" r="26" fill="#fed7aa" stroke="#334155" stroke-width="1.8"/>
+            <!-- Face -->
+            <circle cx="50" cy="62" r="26" fill="#fed7aa" stroke="#1e293b" stroke-width="2"/>
             
-            <!-- Ear Left & Right -->
-            <circle cx="23" cy="64" r="5" fill="#fbcfe8" stroke="#334155" stroke-width="1.5"/>
-            <circle cx="77" cy="64" r="5" fill="#fbcfe8" stroke="#334155" stroke-width="1.5"/>
+            <!-- Ears -->
+            <circle cx="23" cy="64" r="5" fill="#fbcfe8" stroke="#1e293b" stroke-width="1.6"/>
+            <circle cx="77" cy="64" r="5" fill="#fbcfe8" stroke="#1e293b" stroke-width="1.6"/>
 
             <!-- Front Spiky Hair -->
-            <path d="M28 46 L34 56 L42 47 L50 58 L58 48 L66 57 L72 47 Z" fill="#0f172a"/>
+            <path d="M28 46 L34 56 L42 47 L50 58 L58 48 L66 57 L72 47 Z" fill="#090d16"/>
 
             <!-- Eyes -->
-            <ellipse cx="38" cy="60" rx="3.5" ry="4.5" fill="#0f172a"/>
-            <ellipse cx="62" cy="60" rx="3.5" ry="4.5" fill="#0f172a"/>
-            <circle cx="39.5" cy="58.5" r="1.2" fill="#ffffff"/>
-            <circle cx="63.5" cy="58.5" r="1.2" fill="#ffffff"/>
+            <ellipse cx="38" cy="60" rx="3.6" ry="4.8" fill="#090d16"/>
+            <ellipse cx="62" cy="60" rx="3.6" ry="4.8" fill="#090d16"/>
+            <circle cx="39.5" cy="58.2" r="1.3" fill="#ffffff"/>
+            <circle cx="63.5" cy="58.2" r="1.3" fill="#ffffff"/>
 
-            <!-- Stitched Scar Under Left Eye -->
-            <path d="M34 68 L42 68 M36 66 L36 70 M40 66 L40 70" stroke="#334155" stroke-width="1.2" stroke-linecap="round"/>
+            <!-- Left Eye Stitched Scar -->
+            <path d="M34 68 L42 68 M36 66 L36 70 M40 66 L40 70" stroke="#1e293b" stroke-width="1.3" stroke-linecap="round"/>
 
             <!-- Cheeks Blush -->
-            <ellipse cx="32" cy="65" rx="3.5" ry="2" fill="#f43f5e" opacity="0.6"/>
-            <ellipse cx="68" cy="65" rx="3.5" ry="2" fill="#f43f5e" opacity="0.6"/>
+            <ellipse cx="32" cy="65" rx="3.8" ry="2.2" fill="#f43f5e" opacity="0.65"/>
+            <ellipse cx="68" cy="65" rx="3.8" ry="2.2" fill="#f43f5e" opacity="0.65"/>
 
             <!-- Signature Grin -->
-            <path d="M40 72 Q50 82 60 72 Z" fill="#ffffff" stroke="#0f172a" stroke-width="1.6"/>
-            <path d="M44 75 Q50 78 56 75" stroke="#ef4444" stroke-width="1.2" fill="none"/>
+            <path d="M40 72 Q50 82 60 72 Z" fill="#ffffff" stroke="#090d16" stroke-width="1.8"/>
+            <path d="M44 75 Q50 78 56 75" stroke="#ef4444" stroke-width="1.3" fill="none"/>
 
             <!-- Red Sleeveless Vest -->
             <path d="M34 88 L66 88 L72 115 L28 115 Z" fill="#ef4444" stroke="#991b1b" stroke-width="2"/>
-            <!-- Chest Open Center -->
             <path d="M43 88 L50 102 L57 88 Z" fill="#fed7aa"/>
           </svg>
         </div>
@@ -965,7 +980,7 @@
           <span id="speakerLabel">MOKUTTAN LABS</span>
           <span id="timestamp">SYS: ACTIVE</span>
         </div>
-        <div class="log-content" id="logContent">"Hello Chief. Systems online at Mokuttan Labs. Standing by for instructions."</div>
+        <div class="log-content" id="logContent">"Hello Chief! Systems online at Mokuttan Labs. Standing by for instructions."</div>
         <div class="media-holder" id="mediaHolder"></div>
         <a href="#" target="_blank" class="hud-btn" id="navBtn">Open Plotted Coordinates</a>
       </div>
@@ -1051,8 +1066,16 @@
     let currentAudio = null;
     let recognizer = null;
 
-    // Luffy Interactive quotes
-    const luffyQuotes = ["Shishishi!", "Meat!! 🍖", "I'm gonna be King!", "Let's do it, Chief!", "Gomu Gomu!!"];
+    // Luffy Interactive Dialogue & Life Cycle Engine
+    const luffyQuotes = [
+      "Shishishi!",
+      "Meat!! 🍖",
+      "I'm gonna be King of the Pirates!",
+      "Tell me more, Chief!",
+      "Gomu Gomu no...",
+      "What are we building today?",
+      "Sugoi!!"
+    ];
     let bubbleTimer = null;
 
     function triggerLuffyAction(quoteText) {
@@ -1061,7 +1084,7 @@
       clearTimeout(bubbleTimer);
       bubbleTimer = setTimeout(() => {
         luffyBubble.classList.remove('show');
-      }, 2200);
+      }, 2400);
 
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1069,21 +1092,42 @@
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.frequency.setValueAtTime(440, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.15);
         gain.gain.setValueAtTime(0.18, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
         osc.start();
-        osc.stop(ctx.currentTime + 0.18);
+        osc.stop(ctx.currentTime + 0.15);
       } catch (e) {}
     }
 
     luffyWidget.addEventListener('click', () => triggerLuffyAction());
 
     function setLuffyState(state) {
-      luffyWidget.classList.remove('listening', 'speaking');
+      luffyWidget.classList.remove('curious', 'thinking', 'focused');
       if (state) luffyWidget.classList.add(state);
     }
+
+    // Dynamic state listener on user typing
+    hudInput.addEventListener('input', () => {
+      if (hudInput.value.trim().length > 0) {
+        setLuffyState('curious');
+      } else if (!currentAudio) {
+        setLuffyState(null);
+      }
+    });
+
+    // Autonomous Idle Animation Interval (Every 7–11s Luffy does a quirky action)
+    setInterval(() => {
+      if (!currentAudio && !isListening && hudInput.value.trim().length === 0) {
+        const actions = ['curious', 'thinking'];
+        const chosen = actions[Math.floor(Math.random() * actions.length)];
+        setLuffyState(chosen);
+        setTimeout(() => {
+          if (!currentAudio && !isListening) setLuffyState(null);
+        }, 2200);
+      }
+    }, 9000);
 
     function openSidebar() {
       hudSidebar.classList.add('open');
@@ -1137,6 +1181,7 @@
       logContent.textContent = `Q: "${session.prompt}"\n\nA: ${session.response}`;
       hudInput.value = `Follow up on: ${session.prompt}`;
       hudInput.focus();
+      setLuffyState('curious');
       closeSidebar();
     }
 
@@ -1146,7 +1191,7 @@
       } catch (e) {}
       speakerLabel.textContent = "MOKUTTAN LABS";
       logContent.textContent = "Memory cleared, Chief. Ready for a new directive.";
-      triggerLuffyAction("Clean slate!");
+      triggerLuffyAction("Fresh start!");
       closeSidebar();
     }
 
@@ -1164,7 +1209,6 @@
     renderSessions();
 
     audioStopBtn.addEventListener('click', () => {
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       if (currentAudio) {
         currentAudio.pause();
         currentAudio.currentTime = 0;
@@ -1196,52 +1240,31 @@
       }
     }
 
+    // Direct High-Definition Neural Audio Playback
     function playVoice(text, onComplete) {
       const cleanText = text.replace(/[*#_`]/g, '').trim();
-      setLuffyState('speaking');
+      setLuffyState('focused');
 
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        const voices = window.speechSynthesis.getVoices();
-
-        const siriVoice = voices.find(v => 
-          v.name.includes("Samantha") ||
-          v.name.includes("Siri") ||
-          v.name.includes("Karen") ||
-          v.name.includes("Jenny") ||
-          v.name.includes("Google US English Female") ||
-          (v.lang === "en-US" && v.name.toLowerCase().includes("female"))
-        ) || voices.find(v => v.lang === "en-US");
-
-        if (siriVoice) {
-          utterance.voice = siriVoice;
-        }
-
-        utterance.rate = 1.04;
-        utterance.pitch = 1.02;
-        utterance.volume = 1.0;
-
-        utterance.onend = () => {
-          setLuffyState(null);
-          onComplete();
-        };
-        utterance.onerror = () => fallbackServerTTS(cleanText, onComplete);
-
-        window.speechSynthesis.speak(utterance);
-      } else {
-        fallbackServerTTS(cleanText, onComplete);
-      }
-    }
-
-    function fallbackServerTTS(text, onComplete) {
       if (currentAudio) {
         currentAudio.pause();
         currentAudio = null;
       }
-      currentAudio = new Audio(`/api/tts?text=${encodeURIComponent(text)}`);
-      currentAudio.play().catch(e => console.warn("Autoplay notice:", e));
+
+      currentAudio = new Audio(`/api/tts?text=${encodeURIComponent(cleanText)}`);
+      
+      currentAudio.play().catch(err => {
+        console.warn("Audio playback interrupted or blocked:", err);
+        setLuffyState(null);
+        onComplete();
+      });
+
       currentAudio.onended = () => {
+        currentAudio = null;
+        setLuffyState(null);
+        onComplete();
+      };
+
+      currentAudio.onerror = () => {
         currentAudio = null;
         setLuffyState(null);
         onComplete();
@@ -1251,7 +1274,6 @@
     async function sendDirective(command) {
       if (!command || command.trim().length < 2) return;
 
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       if (currentAudio) {
         currentAudio.pause();
         currentAudio = null;
@@ -1267,7 +1289,9 @@
       liveHearing.textContent = "";
       navBtn.style.display = "none";
       animateWaves(true);
-      setLuffyState('listening');
+      
+      // Luffy Enters Thinking / Concentration Mode while AI processes
+      setLuffyState('thinking');
 
       try {
         const res = await fetch('/api/chat', {
@@ -1349,7 +1373,7 @@
       }
 
       recognizer.onend = () => {
-        const isSpeaking = ('speechSynthesis' in window && window.speechSynthesis.speaking) || currentAudio !== null;
+        const isSpeaking = currentAudio !== null;
         if (isListening && !isSpeaking) {
           setTimeout(() => {
             try { recognizer.start(); } catch (e) {}
@@ -1364,7 +1388,7 @@
           awaitingDirective = true;
           accumulatedDirective = "";
           micBtn.classList.add('listening');
-          setLuffyState('listening');
+          setLuffyState('curious');
           telemetryStatus.textContent = "SPEAK NOW";
           liveHearing.textContent = "I'm listening, Chief...";
         }
@@ -1389,8 +1413,8 @@
           if (triggered) {
             awaitingDirective = true;
             micBtn.classList.add('listening');
-            setLuffyState('listening');
-            triggerLuffyAction("I'm ready!");
+            setLuffyState('curious');
+            triggerLuffyAction("I'm listening!");
             telemetryStatus.textContent = "ENGAGED";
 
             for (const alias of wakeAliases) {
@@ -1403,6 +1427,7 @@
             liveHearing.textContent = "Gibbon active! Speak command...";
           }
         } else {
+          setLuffyState('curious');
           if (finalized.trim()) {
             accumulatedDirective += ' ' + finalized.trim();
           }
