@@ -5,18 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>GIBBON // MOKUTTAN LABS</title>
   <link rel="manifest" href="/static/manifest.json">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23030712' stroke='%2300f0ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='32' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-dasharray='6 4'/%3E%3Ccircle cx='50' cy='50' r='18' fill='%2300f0ff' opacity='0.85'/%3E%3Cpath d='M50 12 L50 24 M50 76 L50 88 M12 50 L24 50 M76 50 L88 50' stroke='%2300f0ff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23030712' stroke='%2300f0ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='32' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-dasharray='6 4'/%3E%3Ccircle cx='50' cy='50' r='18' fill='%2300f0ff' opacity='0.85'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --primary: #00f0ff;
-      --primary-glow: rgba(0, 240, 255, 0.4);
+      --primary-glow: rgba(0, 240, 255, 0.45);
       --accent: #ff0055;
-      --accent-glow: rgba(255, 0, 85, 0.45);
+      --accent-glow: rgba(255, 0, 85, 0.5);
+      --straw-yellow: #facc15;
+      --luffy-red: #ef4444;
       --bg: #030712;
-      --panel: rgba(15, 23, 42, 0.85);
-      --panel-border: rgba(0, 240, 255, 0.22);
-      --sidebar-width: 290px;
+      --panel: rgba(13, 20, 36, 0.88);
+      --panel-border: rgba(0, 240, 255, 0.28);
+      --sidebar-width: 295px;
     }
 
     * {
@@ -37,11 +39,11 @@
 
     body {
       background-image: 
-        radial-gradient(circle at 50% 10%, rgba(0, 240, 255, 0.12) 0%, transparent 60%),
+        radial-gradient(circle at 50% 12%, rgba(0, 240, 255, 0.14) 0%, transparent 62%),
         radial-gradient(circle at 85% 90%, rgba(255, 0, 85, 0.08) 0%, transparent 50%),
-        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 24px 24px, 24px 24px;
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 26px 26px, 26px 26px;
       display: flex;
     }
 
@@ -59,7 +61,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.65);
+      background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(4px);
       z-index: 95;
     }
@@ -70,13 +72,12 @@
 
     .hud-sidebar {
       width: var(--sidebar-width);
-      background: rgba(10, 17, 32, 0.96);
+      background: rgba(10, 16, 30, 0.96);
       border-right: 1px solid var(--panel-border);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(16px);
       display: flex;
       flex-direction: column;
-      padding: 14px;
+      padding: 16px;
       z-index: 100;
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       flex-shrink: 0;
@@ -86,26 +87,28 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-bottom: 12px;
-      border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
     }
 
     .brand-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
+    /* High-Visibility Sidebar Emblem */
     .brand-avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
-      border: 1.5px solid var(--primary);
-      box-shadow: 0 0 12px var(--primary-glow);
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 16px var(--primary-glow), inset 0 0 10px rgba(0, 240, 255, 0.3);
       display: flex;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle, #003644 0%, #030712 90%);
+      background: #ffffff;
+      padding: 4px;
       overflow: hidden;
       flex-shrink: 0;
     }
@@ -113,27 +116,26 @@
     .brand-avatar img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      display: block;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
     }
 
     .brand-avatar .avatar-fallback {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.85rem;
+      font-size: 1rem;
       font-weight: 900;
-      color: var(--primary);
-      letter-spacing: 1px;
+      color: #030712;
     }
 
     .brand-meta h2 {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.96rem;
-      letter-spacing: 1.5px;
+      font-size: 1.02rem;
+      letter-spacing: 1.6px;
       color: #fff;
     }
 
     .brand-meta span {
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       color: var(--primary);
       letter-spacing: 1px;
     }
@@ -151,25 +153,25 @@
 
     .sidebar-actions {
       display: flex;
-      gap: 6px;
+      gap: 8px;
       margin-top: 14px;
     }
 
     .new-chat-btn {
       flex: 1;
-      background: rgba(0, 240, 255, 0.08);
+      background: rgba(0, 240, 255, 0.1);
       border: 1px solid var(--primary);
       color: var(--primary);
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      padding: 8px 10px;
+      padding: 9px 12px;
       border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
+      gap: 6px;
       letter-spacing: 1px;
       transition: all 0.2s ease;
     }
@@ -177,17 +179,17 @@
     .new-chat-btn:hover {
       background: var(--primary);
       color: #030712;
-      box-shadow: 0 0 12px var(--primary-glow);
+      box-shadow: 0 0 14px var(--primary-glow);
     }
 
     .clear-history-btn {
-      background: rgba(255, 0, 85, 0.1);
+      background: rgba(255, 0, 85, 0.12);
       border: 1px solid var(--accent);
       color: var(--accent);
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      padding: 8px 10px;
+      padding: 9px 12px;
       border-radius: 8px;
       cursor: pointer;
       letter-spacing: 0.5px;
@@ -201,7 +203,7 @@
 
     .sidebar-label {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.62rem;
+      font-size: 0.64rem;
       letter-spacing: 1.5px;
       color: #64748b;
       text-transform: uppercase;
@@ -218,25 +220,25 @@
     }
 
     .history-item {
-      padding: 8px 10px;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
+      padding: 9px 12px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
       transition: all 0.2s ease;
     }
 
     .history-item:hover {
       border-color: var(--primary);
-      background: rgba(0, 240, 255, 0.1);
-      transform: translateX(3px);
+      background: rgba(0, 240, 255, 0.12);
+      transform: translateX(4px);
     }
 
     .history-title {
-      font-size: 0.84rem;
+      font-size: 0.86rem;
       font-weight: 600;
       color: #f1f5f9;
       white-space: nowrap;
@@ -245,7 +247,7 @@
     }
 
     .history-time {
-      font-size: 0.65rem;
+      font-size: 0.66rem;
       color: #94a3b8;
     }
 
@@ -254,7 +256,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: env(safe-area-inset-top, 8px) 14px calc(8px + env(safe-area-inset-bottom, 12px));
+      padding: env(safe-area-inset-top, 8px) 16px calc(8px + env(safe-area-inset-bottom, 12px));
       position: relative;
       min-width: 0;
       height: 100%;
@@ -262,12 +264,12 @@
 
     header {
       width: 100%;
-      max-width: 650px;
+      max-width: 680px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       flex-shrink: 0;
     }
 
@@ -276,11 +278,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 4px 10px;
-      background: rgba(15, 23, 42, 0.65);
+      padding: 5px 12px;
+      background: rgba(15, 23, 42, 0.7);
       border: 1px solid var(--panel-border);
       border-radius: 8px;
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       letter-spacing: 1px;
       color: #94a3b8;
     }
@@ -293,13 +295,13 @@
       display: none;
       padding: 2px 6px;
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
     }
 
     .telemetry-chip {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
     }
 
     .pulse-dot {
@@ -316,46 +318,53 @@
       50% { opacity: 1; transform: scale(1.2); }
     }
 
+    /* Enhanced Header Branding with Clear Emblem */
     .hud-header-brand-wrap {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       margin-top: 4px;
+      background: rgba(10, 18, 36, 0.65);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      padding: 6px 16px;
+      border-radius: 30px;
+      box-shadow: 0 4px 18px rgba(0, 240, 255, 0.12);
     }
 
     .header-logo-badge {
-      width: 26px;
-      height: 26px;
-      border-radius: 6px;
-      border: 1px solid var(--primary);
-      background: radial-gradient(circle, #003644 0%, #030712 90%);
-      box-shadow: 0 0 8px var(--primary-glow);
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1.5px solid var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 12px var(--primary-glow);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      padding: 2px;
     }
 
     .header-logo-badge img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
     }
 
     .header-logo-badge span {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.65rem;
+      font-size: 0.72rem;
       font-weight: 900;
-      color: var(--primary);
+      color: #030712;
     }
 
     .hud-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.12rem;
+      font-size: 1.15rem;
       font-weight: 900;
       letter-spacing: 2px;
       color: #fff;
-      text-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary-glow);
+      text-shadow: 0 0 12px var(--primary), 0 0 20px var(--primary-glow);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -367,85 +376,186 @@
 
     main {
       width: 100%;
-      max-width: 650px;
+      max-width: 680px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex: 1;
       min-height: 0;
       justify-content: flex-start;
       padding-top: 6px;
     }
 
-    /* Interactive Reactor Ring Core */
-    .reactor-container {
+    /* Interactive Center Stage: Logo Podium + Kid Luffy Mascot */
+    .mascot-stage {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 2px;
+      flex-shrink: 0;
       position: relative;
-      width: 72px;
-      height: 72px;
+    }
+
+    /* Big Glowing Emblem Reactor */
+    .reactor-podium {
+      position: relative;
+      width: 88px;
+      height: 88px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: -2px;
-      flex-shrink: 0;
     }
 
     .reactor-ring-outer {
       position: absolute;
-      inset: 0;
+      inset: -4px;
       border-radius: 50%;
-      border: 1.5px dashed var(--primary);
-      opacity: 0.65;
-      animation: spinClockwise 12s linear infinite;
+      border: 2px dashed var(--primary);
+      opacity: 0.7;
+      animation: spinClockwise 14s linear infinite;
     }
 
     .reactor-ring-inner {
       position: absolute;
-      inset: 6px;
+      inset: 3px;
       border-radius: 50%;
-      border: 1px solid rgba(255, 0, 85, 0.4);
+      border: 1.5px solid rgba(255, 0, 85, 0.45);
       border-top-color: var(--accent);
-      animation: spinCounter 6s linear infinite;
+      animation: spinCounter 7s linear infinite;
     }
 
     .reactor-core-logo {
-      width: 44px;
-      height: 44px;
+      width: 68px;
+      height: 68px;
       border-radius: 50%;
-      border: 1.5px solid var(--primary);
-      background: radial-gradient(circle, #02242e 0%, #030712 90%);
+      border: 2.5px solid var(--primary);
+      background: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 12px var(--primary-glow);
+      box-shadow: 0 0 20px var(--primary-glow), inset 0 0 10px rgba(0, 240, 255, 0.35);
       overflow: hidden;
+      padding: 6px;
       z-index: 2;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
 
     .reactor-core-logo img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
     }
 
     .reactor-core-logo span {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.75rem;
+      font-size: 0.95rem;
       font-weight: 900;
-      color: var(--primary);
+      color: #030712;
     }
 
-    .reactor-container.active .reactor-core-logo {
-      transform: scale(1.08);
-      box-shadow: 0 0 20px var(--accent-glow), 0 0 30px var(--primary-glow);
+    .reactor-podium.active .reactor-core-logo {
+      transform: scale(1.12);
+      box-shadow: 0 0 26px var(--accent-glow), 0 0 34px var(--primary-glow);
     }
 
-    .reactor-container.active .reactor-ring-outer {
-      opacity: 1;
+    .reactor-podium.active .reactor-ring-outer {
       border-color: var(--accent);
       animation-duration: 4s;
+    }
+
+    /* KID LUFFY INTERACTIVE CHARACTER */
+    .luffy-widget {
+      position: relative;
+      width: 76px;
+      height: 92px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      user-select: none;
+    }
+
+    .luffy-widget:hover {
+      transform: scale(1.08) translateY(-4px);
+    }
+
+    .luffy-widget:active {
+      transform: scale(0.92);
+    }
+
+    /* Anime Speech Bubble */
+    .luffy-bubble {
+      position: absolute;
+      top: -24px;
+      background: #ffffff;
+      color: #030712;
+      font-weight: 800;
+      font-size: 0.65rem;
+      padding: 2px 7px;
+      border-radius: 10px;
+      border: 1.5px solid #030712;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: all 0.2s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .luffy-bubble::after {
+      content: "";
+      position: absolute;
+      bottom: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 4px 4px 0;
+      border-style: solid;
+      border-color: #ffffff transparent;
+      display: block;
+      width: 0;
+    }
+
+    .luffy-bubble.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* SVG Character Body */
+    .luffy-svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+      animation: luffyIdle 3.2s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+
+    /* Luffy States */
+    .luffy-widget.listening .luffy-svg {
+      animation: luffyCurious 1.2s ease-in-out infinite alternate;
+    }
+
+    .luffy-widget.speaking .luffy-svg {
+      animation: luffyBounce 0.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes luffyIdle {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-3px) rotate(1.5deg); }
+    }
+
+    @keyframes luffyCurious {
+      0% { transform: rotate(-6deg) translateY(-2px); }
+      100% { transform: rotate(6deg) translateY(-4px); }
+    }
+
+    @keyframes luffyBounce {
+      0% { transform: translateY(0) scale(1, 1); }
+      100% { transform: translateY(-7px) scale(1.04, 0.96); }
     }
 
     @keyframes spinClockwise {
@@ -461,12 +571,12 @@
     .hud-card {
       width: 100%;
       background: var(--panel);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.55);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
       display: flex;
       flex-direction: column;
       flex: 1;
@@ -478,25 +588,25 @@
     .hud-card::before {
       content: "";
       position: absolute;
-      top: 0; left: 10%; width: 80%; height: 1px;
+      top: 0; left: 10%; width: 80%; height: 1.5px;
       background: linear-gradient(90deg, transparent, var(--primary), transparent);
     }
 
     .log-speaker {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       letter-spacing: 1.5px;
       color: var(--primary);
       text-transform: uppercase;
-      margin-bottom: 4px;
+      margin-bottom: 5px;
       display: flex;
       justify-content: space-between;
       flex-shrink: 0;
     }
 
     .log-content {
-      font-size: 0.95rem;
-      line-height: 1.4;
+      font-size: 0.98rem;
+      line-height: 1.45;
       color: #e2e8f0;
       overflow-y: auto;
       flex: 1;
@@ -526,26 +636,26 @@
       display: none;
       width: 100%;
       margin-top: 6px;
-      padding: 6px;
+      padding: 7px;
       background: rgba(0, 240, 255, 0.12);
       border: 1px solid var(--primary);
       color: var(--primary);
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       letter-spacing: 1px;
       font-weight: 700;
       text-align: center;
       border-radius: 6px;
       text-decoration: none;
       text-transform: uppercase;
-      box-shadow: 0 0 10px var(--primary-glow);
+      box-shadow: 0 0 12px var(--primary-glow);
       flex-shrink: 0;
     }
 
     .live-hearing {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: var(--primary);
-      min-height: 1.1rem;
+      min-height: 1.15rem;
       text-align: center;
       font-style: italic;
       white-space: nowrap;
@@ -568,13 +678,13 @@
       background: var(--primary);
       border-radius: 2px;
       transition: height 0.1s ease;
-      box-shadow: 0 0 4px var(--primary);
+      box-shadow: 0 0 5px var(--primary);
     }
 
     .quick-chips {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 6px;
       justify-content: center;
       width: 100%;
       flex-shrink: 0;
@@ -586,22 +696,27 @@
       background: rgba(15, 23, 42, 0.7);
       border: 1px solid var(--panel-border);
       color: #94a3b8;
-      font-size: 0.74rem;
-      padding: 4px 10px;
+      font-size: 0.76rem;
+      padding: 5px 12px;
       border-radius: 14px;
       cursor: pointer;
       white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .chip:hover {
+      border-color: var(--primary);
+      color: #fff;
     }
 
     .chip:active {
       background: rgba(0, 240, 255, 0.2);
       color: var(--primary);
-      border-color: var(--primary);
     }
 
     .hud-footer {
       width: 100%;
-      max-width: 650px;
+      max-width: 680px;
       margin: 0 auto;
       flex-shrink: 0;
     }
@@ -609,11 +724,11 @@
     .dock-pill-container {
       display: flex;
       align-items: center;
-      background: #111827;
-      border: 1px solid rgba(0, 240, 255, 0.28);
+      background: #101726;
+      border: 1px solid rgba(0, 240, 255, 0.32);
       border-radius: 28px;
       padding: 4px 6px 4px 14px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
       gap: 6px;
     }
 
@@ -623,19 +738,19 @@
       border: none;
       color: #fff;
       font-family: 'Rajdhani', sans-serif;
-      font-size: 1rem;
+      font-size: 1.02rem;
       outline: none;
       min-width: 0;
     }
 
     .dock-pill-container input::placeholder {
       color: #64748b;
-      font-size: 0.9rem;
+      font-size: 0.92rem;
     }
 
     .icon-action-btn {
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       border: none;
       background: transparent;
@@ -662,7 +777,7 @@
     .icon-action-btn.listening {
       color: var(--accent);
       background: rgba(255, 0, 85, 0.15);
-      box-shadow: 0 0 10px var(--accent-glow);
+      box-shadow: 0 0 12px var(--accent-glow);
       animation: pulseMic 1s infinite alternate;
     }
 
@@ -680,8 +795,8 @@
     }
 
     .send-pill-btn {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       background: #2563eb;
       border: none;
@@ -690,7 +805,7 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: 0 0 12px rgba(37, 99, 235, 0.5);
+      box-shadow: 0 0 14px rgba(37, 99, 235, 0.55);
       flex-shrink: 0;
       transition: transform 0.15s ease, background 0.2s ease;
     }
@@ -713,7 +828,7 @@
         top: 0;
         bottom: 0;
         transform: translateX(-100%);
-        box-shadow: 10px 0 30px rgba(0,0,0,0.8);
+        box-shadow: 10px 0 30px rgba(0,0,0,0.85);
       }
       .hud-sidebar.open {
         transform: translateX(0);
@@ -782,13 +897,66 @@
     </header>
 
     <main>
-      <!-- Interactive Reactor Ring Visualizer -->
-      <div class="reactor-container" id="reactorContainer">
-        <div class="reactor-ring-outer"></div>
-        <div class="reactor-ring-inner"></div>
-        <div class="reactor-core-logo">
-          <img src="/static/logo.png" alt="ML Core" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-          <span style="display:none;">ML</span>
+      <!-- High-Tech Center Stage: Logo Podium + Kid Luffy Mascot -->
+      <div class="mascot-stage">
+        <!-- Enlarged & Highly Illuminated Emblem Reactor -->
+        <div class="reactor-podium" id="reactorPodium">
+          <div class="reactor-ring-outer"></div>
+          <div class="reactor-ring-inner"></div>
+          <div class="reactor-core-logo">
+            <img src="/static/logo.png" alt="Mokuttan Labs Emblem" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <span style="display:none;">ML</span>
+          </div>
+        </div>
+
+        <!-- Interactive Kid Luffy Mascot -->
+        <div class="luffy-widget" id="luffyWidget" title="Tap Kid Luffy!">
+          <div class="luffy-bubble" id="luffyBubble">Shishishi!</div>
+          
+          <svg class="luffy-svg" viewBox="0 0 100 120">
+            <!-- Straw Hat Brim Back -->
+            <ellipse cx="50" cy="40" rx="46" ry="14" fill="#eab308" stroke="#a16207" stroke-width="2.5"/>
+            <path d="M18 39 Q50 34 82 39" stroke="#b91c1c" stroke-width="4.5" fill="none"/>
+            <!-- Hat Crown -->
+            <path d="M26 38 C28 14, 72 14, 74 38 Z" fill="#facc15" stroke="#a16207" stroke-width="2"/>
+            <path d="M26 36 Q50 33 74 36" stroke="#dc2626" stroke-width="5" fill="none"/>
+
+            <!-- Hair Behind Ears -->
+            <path d="M24 46 Q16 56 26 66 Q20 70 30 76" fill="#111827"/>
+            <path d="M76 46 Q84 56 74 66 Q80 70 70 76" fill="#111827"/>
+
+            <!-- Kid Face -->
+            <circle cx="50" cy="62" r="26" fill="#fed7aa" stroke="#334155" stroke-width="1.8"/>
+            
+            <!-- Ear Left & Right -->
+            <circle cx="23" cy="64" r="5" fill="#fbcfe8" stroke="#334155" stroke-width="1.5"/>
+            <circle cx="77" cy="64" r="5" fill="#fbcfe8" stroke="#334155" stroke-width="1.5"/>
+
+            <!-- Front Spiky Hair -->
+            <path d="M28 46 L34 56 L42 47 L50 58 L58 48 L66 57 L72 47 Z" fill="#0f172a"/>
+
+            <!-- Eyes -->
+            <ellipse cx="38" cy="60" rx="3.5" ry="4.5" fill="#0f172a"/>
+            <ellipse cx="62" cy="60" rx="3.5" ry="4.5" fill="#0f172a"/>
+            <circle cx="39.5" cy="58.5" r="1.2" fill="#ffffff"/>
+            <circle cx="63.5" cy="58.5" r="1.2" fill="#ffffff"/>
+
+            <!-- Stitched Scar Under Left Eye -->
+            <path d="M34 68 L42 68 M36 66 L36 70 M40 66 L40 70" stroke="#334155" stroke-width="1.2" stroke-linecap="round"/>
+
+            <!-- Cheeks Blush -->
+            <ellipse cx="32" cy="65" rx="3.5" ry="2" fill="#f43f5e" opacity="0.6"/>
+            <ellipse cx="68" cy="65" rx="3.5" ry="2" fill="#f43f5e" opacity="0.6"/>
+
+            <!-- Signature Grin -->
+            <path d="M40 72 Q50 82 60 72 Z" fill="#ffffff" stroke="#0f172a" stroke-width="1.6"/>
+            <path d="M44 75 Q50 78 56 75" stroke="#ef4444" stroke-width="1.2" fill="none"/>
+
+            <!-- Red Sleeveless Vest -->
+            <path d="M34 88 L66 88 L72 115 L28 115 Z" fill="#ef4444" stroke="#991b1b" stroke-width="2"/>
+            <!-- Chest Open Center -->
+            <path d="M43 88 L50 102 L57 88 Z" fill="#fed7aa"/>
+          </svg>
         </div>
       </div>
 
@@ -870,7 +1038,9 @@
     const closeSidebarBtn = document.getElementById('closeSidebarBtn');
     const sidebarBackdrop = document.getElementById('sidebarBackdrop');
     const hudSidebar = document.getElementById('hudSidebar');
-    const reactorContainer = document.getElementById('reactorContainer');
+    const reactorPodium = document.getElementById('reactorPodium');
+    const luffyWidget = document.getElementById('luffyWidget');
+    const luffyBubble = document.getElementById('luffyBubble');
 
     const wakeAliases = ["gibbon", "given", "gibons", "gibin", "gabon", "kiban", "gibson"];
     let waveInterval;
@@ -880,6 +1050,40 @@
     let accumulatedDirective = "";
     let currentAudio = null;
     let recognizer = null;
+
+    // Luffy Interactive quotes
+    const luffyQuotes = ["Shishishi!", "Meat!! 🍖", "I'm gonna be King!", "Let's do it, Chief!", "Gomu Gomu!!"];
+    let bubbleTimer = null;
+
+    function triggerLuffyAction(quoteText) {
+      luffyBubble.textContent = quoteText || luffyQuotes[Math.floor(Math.random() * luffyQuotes.length)];
+      luffyBubble.classList.add('show');
+      clearTimeout(bubbleTimer);
+      bubbleTimer = setTimeout(() => {
+        luffyBubble.classList.remove('show');
+      }, 2200);
+
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.18);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.18);
+      } catch (e) {}
+    }
+
+    luffyWidget.addEventListener('click', () => triggerLuffyAction());
+
+    function setLuffyState(state) {
+      luffyWidget.classList.remove('listening', 'speaking');
+      if (state) luffyWidget.classList.add(state);
+    }
 
     function openSidebar() {
       hudSidebar.classList.add('open');
@@ -942,6 +1146,7 @@
       } catch (e) {}
       speakerLabel.textContent = "MOKUTTAN LABS";
       logContent.textContent = "Memory cleared, Chief. Ready for a new directive.";
+      triggerLuffyAction("Clean slate!");
       closeSidebar();
     }
 
@@ -966,7 +1171,8 @@
         currentAudio = null;
       }
       animateWaves(false);
-      reactorContainer.classList.remove('active');
+      setLuffyState(null);
+      reactorPodium.classList.remove('active');
       telemetryStatus.textContent = "MUTED";
       liveHearing.textContent = "Audio stopped.";
 
@@ -977,7 +1183,7 @@
 
     function animateWaves(active) {
       if (active) {
-        reactorContainer.classList.add('active');
+        reactorPodium.classList.add('active');
         waveInterval = setInterval(() => {
           waveBars.forEach(b => {
             b.style.height = `${Math.floor(Math.random() * 10) + 3}px`;
@@ -985,13 +1191,14 @@
         }, 110);
       } else {
         clearInterval(waveInterval);
-        reactorContainer.classList.remove('active');
+        reactorPodium.classList.remove('active');
         waveBars.forEach(b => b.style.height = '3px');
       }
     }
 
     function playVoice(text, onComplete) {
       const cleanText = text.replace(/[*#_`]/g, '').trim();
+      setLuffyState('speaking');
 
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -1015,7 +1222,10 @@
         utterance.pitch = 1.02;
         utterance.volume = 1.0;
 
-        utterance.onend = () => onComplete();
+        utterance.onend = () => {
+          setLuffyState(null);
+          onComplete();
+        };
         utterance.onerror = () => fallbackServerTTS(cleanText, onComplete);
 
         window.speechSynthesis.speak(utterance);
@@ -1033,6 +1243,7 @@
       currentAudio.play().catch(e => console.warn("Autoplay notice:", e));
       currentAudio.onended = () => {
         currentAudio = null;
+        setLuffyState(null);
         onComplete();
       };
     }
@@ -1056,6 +1267,7 @@
       liveHearing.textContent = "";
       navBtn.style.display = "none";
       animateWaves(true);
+      setLuffyState('listening');
 
       try {
         const res = await fetch('/api/chat', {
@@ -1082,6 +1294,7 @@
 
         playVoice(data.reply, () => {
           animateWaves(false);
+          setLuffyState(null);
           awaitingDirective = false;
           accumulatedDirective = "";
           micBtn.classList.remove('listening');
@@ -1094,6 +1307,7 @@
         });
       } catch (err) {
         animateWaves(false);
+        setLuffyState(null);
         awaitingDirective = false;
         micBtn.classList.remove('listening');
         telemetryStatus.textContent = "LINK LOST";
@@ -1150,6 +1364,7 @@
           awaitingDirective = true;
           accumulatedDirective = "";
           micBtn.classList.add('listening');
+          setLuffyState('listening');
           telemetryStatus.textContent = "SPEAK NOW";
           liveHearing.textContent = "I'm listening, Chief...";
         }
@@ -1174,6 +1389,8 @@
           if (triggered) {
             awaitingDirective = true;
             micBtn.classList.add('listening');
+            setLuffyState('listening');
+            triggerLuffyAction("I'm ready!");
             telemetryStatus.textContent = "ENGAGED";
 
             for (const alias of wakeAliases) {
@@ -1182,20 +1399,6 @@
                 break;
               }
             }
-
-            try {
-              const ctx = new (window.AudioContext || window.webkitAudioContext)();
-              const osc = ctx.createOscillator();
-              const gain = ctx.createGain();
-              osc.connect(gain);
-              gain.connect(ctx.destination);
-              osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-              osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
-              gain.gain.setValueAtTime(0.2, ctx.currentTime);
-              gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-              osc.start();
-              osc.stop(ctx.currentTime + 0.2);
-            } catch (e) {}
 
             liveHearing.textContent = "Gibbon active! Speak command...";
           }
