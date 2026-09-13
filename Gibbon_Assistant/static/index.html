@@ -18,9 +18,9 @@
       --accent: #ff0055;
       --accent-glow: rgba(255, 0, 85, 0.6);
       --bg: #030712;
-      --panel: rgba(11, 19, 36, 0.92);
+      --panel: rgba(11, 19, 36, 0.94);
       --panel-border: rgba(0, 240, 255, 0.35);
-      --sidebar-width: 295px;
+      --sidebar-width: 300px;
     }
 
     * {
@@ -100,16 +100,16 @@
     }
 
     .brand-avatar {
-      width: 54px;
-      height: 54px;
-      border-radius: 14px;
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
       border: 2px solid var(--primary);
       box-shadow: 0 0 16px var(--primary-glow);
       display: flex;
       align-items: center;
       justify-content: center;
       background: radial-gradient(circle, #0e1e38 0%, #040914 100%);
-      padding: 6px;
+      padding: 5px;
       overflow: hidden;
       flex-shrink: 0;
     }
@@ -130,13 +130,13 @@
 
     .brand-meta h2 {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.02rem;
-      letter-spacing: 1.6px;
+      font-size: 0.98rem;
+      letter-spacing: 1.5px;
       color: #fff;
     }
 
     .brand-meta span {
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       color: var(--primary);
       letter-spacing: 1px;
     }
@@ -155,7 +155,7 @@
     .sidebar-actions {
       display: flex;
       gap: 8px;
-      margin-top: 14px;
+      margin-top: 12px;
     }
 
     .new-chat-btn {
@@ -166,7 +166,7 @@
       font-family: 'Orbitron', sans-serif;
       font-size: 0.72rem;
       font-weight: 700;
-      padding: 9px 12px;
+      padding: 8px 12px;
       border-radius: 8px;
       cursor: pointer;
       display: flex;
@@ -190,7 +190,7 @@
       font-family: 'Orbitron', sans-serif;
       font-size: 0.72rem;
       font-weight: 700;
-      padding: 9px 12px;
+      padding: 8px 12px;
       border-radius: 8px;
       cursor: pointer;
       letter-spacing: 0.5px;
@@ -208,7 +208,7 @@
       letter-spacing: 1.5px;
       color: #64748b;
       text-transform: uppercase;
-      margin: 18px 0 8px 2px;
+      margin: 16px 0 8px 2px;
     }
 
     .history-list {
@@ -252,6 +252,196 @@
       color: #94a3b8;
     }
 
+    /* USER PROFILE & SETTINGS CARD AT BOTTOM OF SIDEBAR */
+    .user-profile-dock {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid rgba(0, 240, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .user-profile-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .user-avatar-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #0f172a;
+      border: 1.5px solid var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .user-info-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .user-display-name {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-session-tag {
+      font-size: 0.65rem;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+    }
+
+    .profile-gear-btn {
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      color: var(--primary);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .profile-gear-btn:hover {
+      background: var(--primary);
+      color: #030712;
+    }
+
+    /* SETTINGS MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .settings-card {
+      width: 100%;
+      max-width: 380px;
+      background: #0b1326;
+      border: 1.5px solid var(--primary);
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.35);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .settings-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.05rem;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .close-modal-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-group label {
+      font-size: 0.78rem;
+      color: var(--primary);
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 1px;
+    }
+
+    .settings-input {
+      background: #030712;
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .avatar-option {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #030712;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .avatar-option:hover {
+      border-color: var(--primary);
+      transform: scale(1.1);
+    }
+
+    .avatar-option.selected {
+      border-color: var(--primary);
+      background: rgba(0, 240, 255, 0.2);
+      box-shadow: 0 0 12px var(--primary-glow);
+    }
+
+    .save-profile-btn {
+      background: var(--primary);
+      border: none;
+      color: #030712;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 800;
+      padding: 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 6px;
+      letter-spacing: 1px;
+    }
+
     .hud-viewport {
       flex: 1;
       display: flex;
@@ -280,11 +470,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 5px 12px;
-      background: rgba(15, 23, 42, 0.7);
+      padding: 6px 12px;
+      background: rgba(15, 23, 42, 0.75);
       border: 1px solid var(--panel-border);
       border-radius: 8px;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       letter-spacing: 1px;
       color: #94a3b8;
     }
@@ -318,6 +508,27 @@
     @keyframes blink {
       0%, 100% { opacity: 0.3; transform: scale(0.9); }
       50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    .audio-toggle-btn {
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .audio-toggle-btn.muted {
+      border-color: #64748b;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .hud-header-brand-wrap {
@@ -403,8 +614,8 @@
 
     .reactor-podium {
       position: relative;
-      width: 96px;
-      height: 96px;
+      width: 92px;
+      height: 92px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -429,15 +640,15 @@
     }
 
     .reactor-core-logo {
-      width: 78px;
-      height: 78px;
+      width: 74px;
+      height: 74px;
       border-radius: 20px;
       border: 2.5px solid var(--primary);
       background: radial-gradient(circle, #0e203c 0%, #030814 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 24px var(--primary-glow), inset 0 0 14px rgba(0, 240, 255, 0.35);
+      box-shadow: 0 0 24px var(--primary-glow);
       overflow: hidden;
       padding: 6px;
       z-index: 2;
@@ -470,8 +681,8 @@
 
     .luffy-widget {
       position: relative;
-      width: 82px;
-      height: 98px;
+      width: 80px;
+      height: 96px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
@@ -482,10 +693,6 @@
 
     .luffy-widget:hover {
       transform: scale(1.1) translateY(-4px);
-    }
-
-    .luffy-widget:active {
-      transform: scale(0.92);
     }
 
     .luffy-bubble {
@@ -576,11 +783,11 @@
       to { transform: rotate(0deg); }
     }
 
+    /* FULL FLUID EXPANDABLE LOG CARD - NO CUTOFFS */
     .hud-card {
       width: 100%;
       background: var(--panel);
       backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
       border: 1px solid var(--panel-border);
       border-radius: 14px;
       padding: 14px 16px;
@@ -588,8 +795,8 @@
       display: flex;
       flex-direction: column;
       flex: 1;
-      max-height: 48vh;
-      min-height: 110px;
+      max-height: 52vh;
+      min-height: 120px;
       position: relative;
     }
 
@@ -602,31 +809,44 @@
 
     .log-speaker {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       letter-spacing: 1.5px;
       color: var(--primary);
       text-transform: uppercase;
-      margin-bottom: 5px;
+      margin-bottom: 6px;
       display: flex;
       justify-content: space-between;
       flex-shrink: 0;
     }
 
     .log-content {
-      font-size: 0.98rem;
-      line-height: 1.45;
-      color: #e2e8f0;
+      font-size: 1rem;
+      line-height: 1.55;
+      color: #f1f5f9;
       overflow-y: auto;
       flex: 1;
-      padding-right: 4px;
+      padding-right: 6px;
       white-space: pre-wrap;
+    }
+
+    /* Clean subtle cyber scrollbar */
+    .log-content::-webkit-scrollbar {
+      width: 5px;
+    }
+    .log-content::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 4px;
+    }
+    .log-content::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 4px;
     }
 
     .media-holder {
       width: 100%;
       border-radius: 8px;
       overflow: hidden;
-      margin-top: 6px;
+      margin-top: 8px;
       border: 1px solid var(--panel-border);
       display: none;
       flex-shrink: 0;
@@ -636,7 +856,7 @@
     .media-holder img {
       width: 100%;
       height: auto;
-      max-height: 180px;
+      max-height: 200px;
       object-fit: cover;
       display: block;
     }
@@ -645,11 +865,11 @@
       position: absolute;
       bottom: 8px;
       right: 8px;
-      background: rgba(3, 7, 18, 0.85);
+      background: rgba(3, 7, 18, 0.88);
       border: 1px solid var(--primary);
       color: var(--primary);
       font-size: 0.72rem;
-      padding: 4px 8px;
+      padding: 5px 10px;
       border-radius: 6px;
       text-decoration: none;
       font-family: 'Orbitron', sans-serif;
@@ -850,6 +1070,39 @@
 
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
+  <!-- Settings & Profile Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="settings-card">
+      <div class="settings-title">
+        <span>PROFILE & IDENTITY</span>
+        <button class="close-modal-btn" onclick="closeSettingsModal()">✕</button>
+      </div>
+
+      <div class="input-group">
+        <label>YOUR NAME (What Gibbon calls you)</label>
+        <input type="text" id="modalUserName" class="settings-input" placeholder="e.g. Chief, Rahul, Anna..." maxlength="24">
+      </div>
+
+      <div class="input-group">
+        <label>CHOOSE YOUR AVATAR</label>
+        <div class="avatar-grid" id="avatarGrid">
+          <div class="avatar-option" data-avatar="👑">👑</div>
+          <div class="avatar-option" data-avatar="🏴‍☠️">🏴‍☠️</div>
+          <div class="avatar-option" data-avatar="⚡">⚡</div>
+          <div class="avatar-option" data-avatar="🚀">🚀</div>
+          <div class="avatar-option" data-avatar="🎧">🎧</div>
+          <div class="avatar-option" data-avatar="🤖">🤖</div>
+          <div class="avatar-option" data-avatar="🦊">🦊</div>
+          <div class="avatar-option" data-avatar="🕶️">🕶️</div>
+          <div class="avatar-option" data-avatar="🔥">🔥</div>
+          <div class="avatar-option" data-avatar="👾">👾</div>
+        </div>
+      </div>
+
+      <button class="save-profile-btn" onclick="saveProfileSettings()">SAVE IDENTITY</button>
+    </div>
+  </div>
+
   <aside class="hud-sidebar" id="hudSidebar">
     <div class="brand-box">
       <div class="brand-left">
@@ -859,7 +1112,7 @@
         </div>
         <div class="brand-meta">
           <h2>MOKUTTAN LABS</h2>
-          <span>GIBBON NEURAL CORE V2.8</span>
+          <span>GIBBON NEURAL CORE V3.0</span>
         </div>
       </div>
       <button class="close-sidebar-btn" id="closeSidebarBtn" aria-label="Close Drawer">✕</button>
@@ -874,22 +1127,36 @@
       </button>
     </div>
 
-    <div class="sidebar-label">Recent Inquiries & Sessions</div>
+    <div class="sidebar-label">Your Private Inquiries</div>
     <div class="history-list" id="historyList"></div>
+
+    <!-- User Profile Deck at Bottom of Drawer -->
+    <div class="user-profile-dock">
+      <div class="user-profile-left">
+        <div class="user-avatar-badge" id="sidebarAvatarBadge">👑</div>
+        <div class="user-info-text">
+          <span class="user-display-name" id="sidebarUserName">Chief</span>
+          <span class="user-session-tag">Private Session</span>
+        </div>
+      </div>
+      <button class="profile-gear-btn" onclick="openSettingsModal()" title="Edit Name & Avatar">⚙</button>
+    </div>
   </aside>
 
   <div class="hud-viewport">
     <header>
       <div class="hud-header-bar">
-        <button class="sidebar-toggle-btn" id="sidebarToggleBtn">☰ SESSIONS</button>
+        <button class="sidebar-toggle-btn" id="sidebarToggleBtn">☰ CHATS</button>
         <div class="telemetry-chip">
           <span class="pulse-dot"></span>
           <span id="telemetryStatus">STANDBY</span>
         </div>
-        <div id="liveClock">00:00:00</div>
-        <div class="telemetry-chip">
-          <span>LINK: </span><span id="pingValue" style="color:var(--primary);">ONLINE</span>
-        </div>
+        <div id="liveClock">00:00:00 IST</div>
+        <!-- Live Voice Audio Toggle Switch -->
+        <button class="audio-toggle-btn" id="voiceMuteToggleBtn" title="Toggle Voice Output">
+          <span id="muteIcon">🔊</span>
+          <span id="muteLabel">VOICE ON</span>
+        </button>
       </div>
       <div class="hud-header-brand-wrap">
         <div class="header-logo-badge">
@@ -949,12 +1216,13 @@
         </div>
       </div>
 
+      <!-- FULL DEPTH SCROLLABLE HUD CARD -->
       <div class="hud-card">
         <div class="log-speaker">
           <span id="speakerLabel">MOKUTTAN LABS</span>
           <span id="timestamp">SYS: ACTIVE</span>
         </div>
-        <div class="log-content" id="logContent">"Hello Chief! Systems online at Mokuttan Labs. Standing by for instructions."</div>
+        <div class="log-content" id="logContent">"Hello! Mokuttan Labs systems are online. Ask me anything or choose an action below."</div>
         <div class="media-holder" id="mediaHolder"></div>
       </div>
 
@@ -967,7 +1235,6 @@
         <div class="wave-bar"></div><div class="wave-bar"></div>
       </div>
 
-      <!-- Quick Action Chips -->
       <div class="quick-chips">
         <div class="chip" onclick="sendDirective('Weather forecast for Bangalore')">⚡ Weather</div>
         <div class="chip" onclick="sendDirective('What is the current date and time')">📅 Date & Time</div>
@@ -978,7 +1245,7 @@
 
     <footer class="hud-footer">
       <div class="dock-pill-container">
-        <input type="text" id="hudInput" placeholder="Directive or 'Hey Gibbon'..." />
+        <input type="text" id="hudInput" placeholder="Type a message or say 'Hey Gibbon'..." />
         <button class="icon-action-btn icon-cancel-btn" id="audioStopBtn" title="Stop Audio" aria-label="Stop Playback">
           <svg viewBox="0 0 24 24">
             <rect x="6" y="6" width="12" height="12" rx="2"/>
@@ -990,7 +1257,7 @@
             <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
           </svg>
         </button>
-        <button class="send-pill-btn" id="sendBtn" title="Send Directive" aria-label="Send">
+        <button class="send-pill-btn" id="sendBtn" title="Send Message" aria-label="Send">
           <svg viewBox="0 0 24 24">
             <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/>
           </svg>
@@ -1004,12 +1271,97 @@
       navigator.serviceWorker.register('/static/sw.js');
     }
 
+    // Accurate Indian Standard Time live clock
     function updateClock() {
-      const now = new Date();
-      document.getElementById('liveClock').textContent = now.toTimeString().split(' ')[0];
+      const options = { timeZone: "Asia/Kolkata", hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      document.getElementById('liveClock').textContent = new Intl.DateTimeFormat('en-GB', options).format(new Date()) + " IST";
     }
     setInterval(updateClock, 1000);
     updateClock();
+
+    // Isolated Device & User Profile Management
+    let userSessionId = localStorage.getItem('gibbon_device_id');
+    if (!userSessionId) {
+      userSessionId = 'user_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now();
+      localStorage.setItem('gibbon_device_id', userSessionId);
+    }
+
+    let currentUserName = localStorage.getItem('gibbon_user_name') || "Chief";
+    let currentUserAvatar = localStorage.getItem('gibbon_user_avatar') || "👑";
+    let isVoiceMuted = localStorage.getItem('gibbon_voice_muted') === 'true';
+
+    const sidebarUserName = document.getElementById('sidebarUserName');
+    const sidebarAvatarBadge = document.getElementById('sidebarAvatarBadge');
+    const settingsModal = document.getElementById('settingsModal');
+    const modalUserName = document.getElementById('modalUserName');
+    const avatarOptions = document.querySelectorAll('.avatar-option');
+    const voiceMuteToggleBtn = document.getElementById('voiceMuteToggleBtn');
+    const muteIcon = document.getElementById('muteIcon');
+    const muteLabel = document.getElementById('muteLabel');
+
+    function applyUserProfile() {
+      sidebarUserName.textContent = currentUserName;
+      sidebarAvatarBadge.textContent = currentUserAvatar;
+    }
+
+    function applyVoiceMuteState() {
+      if (isVoiceMuted) {
+        voiceMuteToggleBtn.classList.add('muted');
+        muteIcon.textContent = "🔇";
+        muteLabel.textContent = "VOICE OFF";
+      } else {
+        voiceMuteToggleBtn.classList.remove('muted');
+        muteIcon.textContent = "🔊";
+        muteLabel.textContent = "VOICE ON";
+      }
+      localStorage.setItem('gibbon_voice_muted', isVoiceMuted);
+    }
+
+    voiceMuteToggleBtn.addEventListener('click', () => {
+      isVoiceMuted = !isVoiceMuted;
+      applyVoiceMuteState();
+      if (isVoiceMuted && currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+        animateWaves(false);
+        setLuffyState(null);
+      }
+    });
+
+    applyUserProfile();
+    applyVoiceMuteState();
+
+    function openSettingsModal() {
+      modalUserName.value = currentUserName;
+      avatarOptions.forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.avatar === currentUserAvatar);
+      });
+      settingsModal.classList.add('active');
+    }
+
+    function closeSettingsModal() {
+      settingsModal.classList.remove('active');
+    }
+
+    avatarOptions.forEach(opt => {
+      opt.addEventListener('click', () => {
+        avatarOptions.forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+      });
+    });
+
+    function saveProfileSettings() {
+      const typed = modalUserName.value.trim();
+      currentUserName = typed.length > 0 ? typed : "Chief";
+      const selOpt = document.querySelector('.avatar-option.selected');
+      if (selOpt) currentUserAvatar = selOpt.dataset.avatar;
+
+      localStorage.setItem('gibbon_user_name', currentUserName);
+      localStorage.setItem('gibbon_user_avatar', currentUserAvatar);
+      applyUserProfile();
+      closeSettingsModal();
+      triggerLuffyAction(`Hey ${currentUserName}!`);
+    }
 
     const micBtn = document.getElementById('micBtn');
     const telemetryStatus = document.getElementById('telemetryStatus');
@@ -1043,7 +1395,7 @@
       "Shishishi!",
       "Meat!! 🍖",
       "I'm gonna be King of the Pirates!",
-      "Tell me more, Chief!",
+      "Tell me more!",
       "Gomu Gomu no...",
       "What are we building today?",
       "Sugoi!!"
@@ -1113,7 +1465,9 @@
     closeSidebarBtn.addEventListener('click', closeSidebar);
     sidebarBackdrop.addEventListener('click', closeSidebar);
 
-    let sessions = JSON.parse(localStorage.getItem('gibbon_sessions') || '[]');
+    // Private isolated history per device
+    const storageKey = 'gibbon_sessions_' + userSessionId;
+    let sessions = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
     function saveSession(prompt, response) {
       const newSession = {
@@ -1123,15 +1477,15 @@
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       sessions.unshift(newSession);
-      if (sessions.length > 20) sessions.pop();
-      localStorage.setItem('gibbon_sessions', JSON.stringify(sessions));
+      if (sessions.length > 25) sessions.pop();
+      localStorage.setItem(storageKey, JSON.stringify(sessions));
       renderSessions();
     }
 
     function renderSessions() {
       historyList.innerHTML = '';
       if (sessions.length === 0) {
-        historyList.innerHTML = `<div style="font-size:0.75rem; color:#475569; padding:8px;">No inquiries recorded yet.</div>`;
+        historyList.innerHTML = `<div style="font-size:0.75rem; color:#475569; padding:8px;">No chats yet. Ask anything!</div>`;
         return;
       }
       sessions.forEach((s) => {
@@ -1147,9 +1501,9 @@
     }
 
     function loadPastSession(session) {
-      speakerLabel.textContent = "HISTORICAL CONTEXT";
-      logContent.textContent = `Q: "${session.prompt}"\n\nA: ${session.response}`;
-      hudInput.value = `Follow up on: ${session.prompt}`;
+      speakerLabel.textContent = "PREVIOUS QUESTION";
+      logContent.textContent = `You asked: "${session.prompt}"\n\nGibbon: ${session.response}`;
+      hudInput.value = `Tell me more about: ${session.prompt}`;
       hudInput.focus();
       setLuffyState('curious');
       closeSidebar();
@@ -1157,10 +1511,14 @@
 
     async function startNewSession() {
       try {
-        await fetch('/api/clear', { method: 'POST' });
+        await fetch('/api/clear', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userSessionId, user_name: currentUserName })
+        });
       } catch (e) {}
       speakerLabel.textContent = "MOKUTTAN LABS";
-      logContent.textContent = "Memory cleared, Chief. Ready for a new directive.";
+      logContent.textContent = `Memory refreshed, ${currentUserName}! Ready for your questions.`;
       mediaHolder.style.display = "none";
       triggerLuffyAction("Fresh start!");
       closeSidebar();
@@ -1168,7 +1526,7 @@
 
     async function clearAllHistory() {
       sessions = [];
-      localStorage.removeItem('gibbon_sessions');
+      localStorage.removeItem(storageKey);
       renderSessions();
       await startNewSession();
     }
@@ -1211,7 +1569,13 @@
       }
     }
 
+    // High-Definition Neural Audio Playback (Respects Voice Mute Switch)
     function playVoice(text, onComplete) {
+      if (isVoiceMuted) {
+        onComplete();
+        return;
+      }
+
       const cleanText = text.replace(/[*#_`"]/g, '').trim();
       setLuffyState('focused');
 
@@ -1253,8 +1617,8 @@
         try { recognizer.stop(); } catch (e) {}
       }
 
-      telemetryStatus.textContent = "SYNCING";
-      speakerLabel.textContent = "CHIEF DIRECTIVE";
+      telemetryStatus.textContent = "THINKING";
+      speakerLabel.textContent = `${currentUserName.toUpperCase()}`;
       logContent.textContent = `"${command}"`;
       liveHearing.textContent = "";
       mediaHolder.style.display = "none";
@@ -1265,11 +1629,15 @@
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: command })
+          body: JSON.stringify({ 
+            message: command, 
+            user_id: userSessionId, 
+            user_name: currentUserName 
+          })
         });
         const data = await res.json();
 
-        speakerLabel.textContent = "GIBBON CORE";
+        speakerLabel.textContent = "GIBBON";
         logContent.textContent = data.reply;
 
         saveSession(command, data.reply);
@@ -1300,8 +1668,8 @@
         setLuffyState(null);
         awaitingDirective = false;
         micBtn.classList.remove('listening');
-        telemetryStatus.textContent = "LINK LOST";
-        logContent.textContent = "Neural connection lost. Check server logs.";
+        telemetryStatus.textContent = "DISCONNECTED";
+        logContent.textContent = "Could not connect to the server. Please check your connection.";
 
         if (isListening && recognizer) {
           try { recognizer.start(); } catch (e) {}
@@ -1355,8 +1723,8 @@
           accumulatedDirective = "";
           micBtn.classList.add('listening');
           setLuffyState('curious');
-          telemetryStatus.textContent = "SPEAK NOW";
-          liveHearing.textContent = "I'm listening, Chief...";
+          telemetryStatus.textContent = "LISTENING";
+          liveHearing.textContent = `I am listening, ${currentUserName}...`;
         }
       });
 
@@ -1380,7 +1748,7 @@
             awaitingDirective = true;
             micBtn.classList.add('listening');
             setLuffyState('curious');
-            triggerLuffyAction("I'm listening!");
+            triggerLuffyAction(`Yes, ${currentUserName}!`);
             telemetryStatus.textContent = "ENGAGED";
 
             for (const alias of wakeAliases) {
@@ -1390,7 +1758,7 @@
               }
             }
 
-            liveHearing.textContent = "Gibbon active! Speak command...";
+            liveHearing.textContent = "Gibbon active! Speak now...";
           }
         } else {
           setLuffyState('curious');
@@ -1425,12 +1793,6 @@
       telemetryStatus.textContent = "NO SPEECH API";
       liveHearing.textContent = "Use typing interface below.";
     }
-    function updateClock() {
-  const options = { timeZone: "Asia/Kolkata", hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
-  document.getElementById('liveClock').textContent = new Intl.DateTimeFormat('en-GB', options).format(new Date()) + " IST";
-}
-setInterval(updateClock, 1000);
-updateClock();
   </script>
 </body>
 </html>
