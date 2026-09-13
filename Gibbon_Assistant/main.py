@@ -4,7 +4,7 @@ import time
 import random
 import sqlite3
 import requests
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from collections import defaultdict
@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
 from geopy.geocoders import Nominatim
 from duckduckgo_search import DDGS
+from bs4 import BeautifulSoup
 from google import genai
 from google.genai import types
 from groq import Groq
@@ -27,7 +28,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v23")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v25")
 IST = ZoneInfo("Asia/Kolkata")
 
 def get_ist_now() -> datetime:
@@ -50,6 +51,31 @@ init_db()
 
 user_conversation_histories = defaultdict(list)
 
+def fetch_url_content(url: str) -> str:
+    """Fetches exact live HTML content directly from a target website."""
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
+
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9"
+        }
+        res = requests.get(url, headers=headers, timeout=12)
+        if res.status_code == 200:
+            soup = BeautifulSoup(res.text, "html.parser")
+            for tag in soup(["script", "style", "nav", "noscript", "svg", "iframe"]):
+                tag.decompose()
+            
+            # Extract plain text
+            text = soup.get_text(separator=" ", strip=True)
+            clean_text = re.sub(r"\s+", " ", text).strip()
+            return clean_text[:4500]
+    except Exception as e:
+        print(f"Direct URL scraping error: {e}")
+    return ""
+
 def search_live_web(query: str) -> str:
     """Searches live DuckDuckGo web for real-time grounding."""
     try:
@@ -67,18 +93,18 @@ def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> st
     call_name = user_name.strip() if user_name and user_name.strip() else "Chief"
     
     instruction = (
-        f"You are Gibbon, a friendly, modern personal AI assistant engineered by Mokuttan Labs. "
+        f"You are Gibbon, a friendly, accurate personal AI assistant engineered by Mokuttan Labs. "
         f"The user's name is {call_name}. Address the user naturally by {call_name}. "
         f"The current real-world date and time is {now_str} (Indian Standard Time). "
-        "CRITICAL GUIDELINES: "
-        "1. Write in clear, straightforward English that is effortless to understand for everyone. "
-        "2. When presenting lists, specifications, pricing, comparisons, or schedules, feel free to use clean markdown tables. "
-        "3. When asked for recent tech, products, or current news, base your answers on verified real-world facts rather than outdated historical data. "
-        "4. Explain things completely and logically without artificially truncating your response. "
-        "5. TIMING & SCHEDULES: Calculate step-by-step arithmetic. If someone sleeps at 2:30 AM, 7.5 to 8 hours of sleep means waking between 10:00 AM and 10:30 AM."
+        "CRITICAL INSTRUCTIONS FOR ACCURACY: "
+        "1. GROUND TRUTH: When answering questions about a website or specific organization, ALWAYS prioritize the LIVE CONTEXT provided below over pre-existing memory. "
+        "2. PHONE NUMBERS & CONTACT DETAILS: Cite the exact phone numbers, email addresses, and locations present in the provided text. Never estimate contact numbers or confuse branches. "
+        "3. Clear, simple language: Explain facts simply so it is easy to understand for everyone. "
+        "4. If presenting structured comparisons or lists, use clean markdown tables. "
+        "5. Complete answers: Provide the complete information without cutting off your response."
     )
     if live_context:
-        instruction += f"\n\nLIVE SEARCH GROUNDING DATA:\n{live_context}"
+        instruction += f"\n\n--- VERIFIED LIVE CONTEXT ---\n{live_context}\n-----------------------------"
     return instruction
 
 def get_gemini_keys():
@@ -143,7 +169,7 @@ def query_groq(prompt: str, user_id: str, user_name: str, live_context: str = ""
             chat_completion = client.chat.completions.create(
                 messages=messages,
                 model=model_name,
-                temperature=0.3,
+                temperature=0.2,
                 max_tokens=950
             )
             return chat_completion.choices[0].message.content.strip()
@@ -339,16 +365,29 @@ async def process_command(request: Request):
             return {"reply": f"Here are your pending reminders, {user_name}: {tasks}."}
         return {"reply": f"Your reminder list is completely empty right now, {user_name}."}
 
+    # REAL-TIME CONTEXT RESOLUTION (URL SCRAPING + TARGETED WEB SEARCH)
     live_context = ""
-    needs_live_data = any(w in lower for w in [
-        "latest", "newest", "current", "release", "released", "launch", 
-        "price", "who is", "news", "specs", "phone", "iphone", "apple", "samsung"
-    ])
+    url_match = re.search(r'(https?://[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:/[^\s]*)?)', raw_message)
+    
+    # 1. Direct Webpage Scraping for Links / Domains
+    if url_match and ("." in url_match.group(1)) and not url_match.group(1).endswith("."):
+        candidate_url = url_match.group(1).rstrip(",.?!")
+        # Ensure it looks like a web URL
+        if any(candidate_url.startswith(p) for p in ["http://", "https://", "www."]) or candidate_url.endswith(".in") or candidate_url.endswith(".com") or candidate_url.endswith(".org"):
+            page_text = fetch_url_content(candidate_url)
+            if page_text:
+                live_context = f"LIVE DATA SCRAPED DIRECTLY FROM {candidate_url}:\n{page_text}"
 
-    if needs_live_data:
-        search_query = re.sub(r"\b(gibbon|given|hey|hi)\b", "", raw_message, flags=re.IGNORECASE).strip()
-        current_year = get_ist_now().strftime("%Y")
-        live_context = search_live_web(f"{search_query} {current_year}")
+    # 2. Targeted Live Search if no direct URL or as search supplement
+    if not live_context:
+        needs_search = any(w in lower for w in [
+            "latest", "newest", "current", "release", "released", "launch", 
+            "price", "who is", "news", "specs", "phone", "iphone", "apple", "samsung",
+            "contact", "number", "address", "phone number", "clinic", "hospital"
+        ])
+        if needs_search:
+            search_query = re.sub(r"\b(gibbon|given|hey|hi)\b", "", raw_message, flags=re.IGNORECASE).strip()
+            live_context = search_live_web(search_query)
 
     clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
     ai_answer = ask_ai_brain(clean_prompt or raw_message, user_id, user_name, live_context)
