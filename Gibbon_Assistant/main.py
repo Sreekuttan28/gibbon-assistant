@@ -27,7 +27,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v21")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v22")
 IST = ZoneInfo("Asia/Kolkata")
 
 def get_ist_now() -> datetime:
@@ -70,14 +70,14 @@ def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> st
         f"You are Gibbon, a friendly, modern personal AI assistant engineered by Mokuttan Labs. "
         f"The user's name is {call_name}. Address the user naturally by {call_name}. "
         f"The current real-world date and time is {now_str} (Indian Standard Time). "
-        "CRITICAL REAL-TIME ACCURACY RULES: "
-        "1. Never guess or state that tech from 2023 or earlier is the latest if more recent products exist. "
-        "2. When answering questions about 'latest', 'current', released products, or events, always ground your answer in the verified real-world context provided below. "
-        "3. Write in clear, simple English that is very easy to understand for everyone. "
-        "4. Do not cut answers unnaturally short. Give the accurate answer with proper context."
+        "CRITICAL GUIDELINES: "
+        "1. Write in clear, straightforward English that is effortless to understand for everyone. "
+        "2. When asked for recent tech, products, or current news, base your answers on verified real-world facts rather than outdated historical data. "
+        "3. Explain things completely and logically. Do not artificially truncate your response. "
+        "4. TIMING & SCHEDULES: Calculate step-by-step arithmetic. If someone sleeps at 2:30 AM, 7.5 to 8 hours of sleep means waking between 10:00 AM and 10:30 AM."
     )
     if live_context:
-        instruction += f"\n\nLIVE SEARCH GROUNDING DATA (USE THIS REAL-TIME DATA TO ANSWER ACCURATELY):\n{live_context}"
+        instruction += f"\n\nLIVE SEARCH GROUNDING DATA:\n{live_context}"
     return instruction
 
 def get_gemini_keys():
@@ -143,7 +143,7 @@ def query_groq(prompt: str, user_id: str, user_name: str, live_context: str = ""
                 messages=messages,
                 model=model_name,
                 temperature=0.3,
-                max_tokens=800
+                max_tokens=900
             )
             return chat_completion.choices[0].message.content.strip()
         except Exception as err:
@@ -179,7 +179,7 @@ def ask_ai_brain(prompt: str, user_id: str, user_name: str, live_context: str = 
             print(f"Groq failover exception: {groq_err}")
 
     call_name = user_name.strip() if user_name and user_name.strip() else "Chief"
-    return f"I am sorry {call_name}, connection is busy right now. Please ask me again in 20 seconds."
+    return f"I am sorry {call_name}, the AI connection is busy right now. Please try again in a few seconds."
 
 def generate_image_with_fallback(clean_prompt: str) -> str:
     encoded = quote(clean_prompt)
@@ -214,28 +214,42 @@ def get_live_forecast(city_name: str, user_name: str) -> str:
     try:
         loc = geolocator.geocode(city_name, timeout=10)
         if not loc:
-            return f"{call_name}, I could not find coordinates for {city_name}."
+            return f"{call_name}, I could not pinpoint coordinates for {city_name}."
 
+        # Reliable Open-Meteo Current & Daily API query
         url = (
             f"https://api.open-meteo.com/v1/forecast?"
             f"latitude={loc.latitude}&longitude={loc.longitude}"
-            f"&current_weather=true&daily=temperature_2m_max,temperature_2m_min"
+            f"&current=temperature_2m,wind_speed_10m"
+            f"&daily=temperature_2m_max,temperature_2m_min"
             f"&timezone=Asia%2FKolkata"
         )
-        data = requests.get(url, timeout=10).json()
-        current = data.get("current_weather", {})
-        temp = current.get("temperature")
-        wind = current.get("windspeed")
-        daily = data.get("daily", {})
-        max_t = daily.get("temperature_2m_max", [temp])[0]
-        min_t = daily.get("temperature_2m_min", [temp])[0]
+        res = requests.get(url, timeout=10).json()
+
+        # Handle both modern 'current' and fallback 'current_weather'
+        current_data = res.get("current") or res.get("current_weather", {})
+        temp = current_data.get("temperature_2m")
+        if temp is None:
+            temp = current_data.get("temperature", "--")
+
+        wind = current_data.get("wind_speed_10m")
+        if wind is None:
+            wind = current_data.get("windspeed", "--")
+
+        daily_data = res.get("daily", {})
+        max_temps = daily_data.get("temperature_2m_max", [])
+        min_temps = daily_data.get("temperature_2m_min", [])
+
+        max_t = max_temps[0] if max_temps else temp
+        min_t = min_temps[0] if min_temps else temp
 
         city_clean = loc.address.split(",")[0]
         return (
-            f"Right now in {city_clean}, the temperature is {temp}°C with wind speed at {wind} km/h. "
+            f"Right now in {city_clean}, the temperature is {temp}°C with wind speed around {wind} km/h. "
             f"Today's high is {max_t}°C and the low is {min_t}°C."
         )
-    except Exception:
+    except Exception as e:
+        print(f"Weather error: {e}")
         return f"Could not check the live weather right now, {call_name}."
 
 @app.get("/")
@@ -258,7 +272,6 @@ async def process_command(request: Request):
     user_name = data.get("user_name", "Chief").strip() or "Chief"
     lower = raw_message.lower()
 
-    # Exact Indian Standard Time (IST) Direct Answers
     if any(k in lower for k in ["what time is it", "current time", "what's the time", "tell me the time", "time now"]):
         now_time = get_ist_now().strftime("%I:%M %p")
         return {"reply": f"The current time is {now_time} IST, {user_name}."}
@@ -280,13 +293,11 @@ async def process_command(request: Request):
         if len(clean_check) < 2:
             return {"reply": f"Hello {user_name}! Mokuttan Labs core is ready. What can I do for you today?"}
 
-    # Prompt Engineering for Creators
     if any(k in lower for k in ["prompt for", "make a prompt", "create a prompt", "video prompt", "midjourney prompt"]):
         idea = re.sub(r"\b(gibbon|given|prompt for|make a prompt for|create a prompt for|video prompt for|generate prompt for)\b", "", raw_message, flags=re.IGNORECASE).strip()
         engineered = engineer_prompt_for_creator(idea or raw_message, user_id, user_name)
         return {"reply": f"Here is a simple and clear prompt you can copy and use, {user_name}:\n\n\"{engineered}\""}
 
-    # Image Generation
     elif any(k in lower for k in ["generate image", "create image", "draw", "render image", "make an image"]):
         clean_idea = re.sub(r"\b(gibbon|given|generate an image of|generate image of|create an image of|draw|render|make an image of)\b", "", raw_message, flags=re.IGNORECASE).strip()
         filename = generate_image_with_fallback(clean_idea or "futuristic glowing core")
@@ -299,12 +310,12 @@ async def process_command(request: Request):
         else:
             fallback_prompt = engineer_prompt_for_creator(clean_idea, user_id, user_name)
             return {
-                "reply": f"The image maker was busy right now, {user_name}. But here is a ready-to-use prompt you can use:\n\n\"{fallback_prompt}\""
+                "reply": f"The direct image maker was busy right now, {user_name}. But here is a ready-to-use prompt you can use:\n\n\"{fallback_prompt}\""
             }
 
     elif any(k in lower for k in ["forecast", "weather", "temperature", "rain"]):
         match = re.search(r"(?:in|for|at)\s+([a-zA-Z\s]+)", lower)
-        target_city = match.group(1).strip() if match else "Bangalore"
+        target_city = match.group(1).strip() if match else "Bengaluru"
         report = get_live_forecast(target_city, user_name)
         return {"reply": report}
 
@@ -329,8 +340,7 @@ async def process_command(request: Request):
             return {"reply": f"Here are your pending reminders, {user_name}: {tasks}."}
         return {"reply": f"Your reminder list is completely empty right now, {user_name}."}
 
-    # AUTOMATIC REAL-TIME SEARCH ROUTING
-    # Checks if question is about latest products, releases, news, tech, or current facts
+    # AUTOMATIC REAL-TIME GROUNDING FOR LATEST INFORMATION
     live_context = ""
     needs_live_data = any(w in lower for w in [
         "latest", "newest", "current", "release", "released", "launch", 
@@ -348,7 +358,14 @@ async def process_command(request: Request):
 
 @app.get("/api/tts")
 async def text_to_speech(text: str):
-    spoken_text = text[:360]
+    # Strip markdown symbols, pipes, bullets, code fences, and dashes so neural audio reads seamlessly
+    clean_text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
+    clean_text = re.sub(r'[*#_`|~>—–-]', ' ', clean_text)
+    clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+    
+    # Support full-length detailed answers without premature truncation
+    spoken_text = clean_text[:4000]
+
     candidate_voices = ["en-US-AvaNeural", "en-US-AriaNeural", "en-US-JennyNeural"]
     audio_data = bytearray()
 
@@ -367,7 +384,8 @@ async def text_to_speech(text: str):
                     audio_data.extend(chunk["data"])
             if len(audio_data) > 0:
                 break
-        except Exception:
+        except Exception as e:
+            print(f"TTS attempt error: {e}")
             continue
 
     return Response(content=bytes(audio_data), media_type="audio/mpeg")
