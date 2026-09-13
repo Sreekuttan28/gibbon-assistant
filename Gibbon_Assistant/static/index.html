@@ -473,7 +473,7 @@
     <div class="hud-card">
       <div class="log-speaker">
         <span id="speakerLabel">FEEDBACK</span>
-        <span id="timestamp">SYS: 2.7</span>
+        <span id="timestamp">SYS: ACTIVE</span>
       </div>
       <div class="log-content" id="logContent">
         "Tap the reactor core once to initiate voice protocols, Master. I will remember our discussion and follow your directives seamlessly."
@@ -532,6 +532,9 @@
     let recognizer = null;
 
     audioStopBtn.addEventListener('click', () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       if (currentAudio) {
         currentAudio.pause();
         currentAudio.currentTime = 0;
@@ -541,7 +544,6 @@
       telemetryStatus.textContent = "MUTED";
       liveHearing.textContent = "Playback silenced.";
 
-      // Resume listening after manual mute if mode is active
       if (isListening && recognizer) {
         try { recognizer.start(); } catch (e) {}
       }
@@ -560,16 +562,56 @@
       }
     }
 
+    function playVoice(text, onComplete) {
+      const cleanText = text.replace(/[*#_`]/g, '').trim();
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        const voices = window.speechSynthesis.getVoices();
+        const gentleVoice = voices.find(v => 
+          v.name.includes("Natural") || 
+          v.name.includes("Google UK English Female") || 
+          v.name.includes("Samantha") || 
+          v.lang.startsWith("en-GB")
+        );
+        if (gentleVoice) utterance.voice = gentleVoice;
+
+        utterance.rate = 1.05;
+        utterance.pitch = 0.95;
+
+        utterance.onend = () => onComplete();
+        utterance.onerror = () => fallbackServerTTS(cleanText, onComplete);
+
+        window.speechSynthesis.speak(utterance);
+      } else {
+        fallbackServerTTS(cleanText, onComplete);
+      }
+    }
+
+    function fallbackServerTTS(text, onComplete) {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+      currentAudio = new Audio(`/api/tts?text=${encodeURIComponent(text)}`);
+      currentAudio.play().catch(e => console.warn("Autoplay blocked:", e));
+      currentAudio.onended = () => {
+        currentAudio = null;
+        onComplete();
+      };
+    }
+
     async function sendDirective(command) {
       if (!command || command.trim().length < 2) return;
 
-      // 1. Halt any ongoing audio
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       if (currentAudio) {
         currentAudio.pause();
         currentAudio = null;
       }
 
-      // 2. Temporarily stop the microphone so it does not hear Gibbon's own output
       if (recognizer && isListening) {
         try { recognizer.stop(); } catch (e) {}
       }
@@ -602,13 +644,7 @@
           navBtn.href = data.map_link;
         }
 
-        // 3. Play voice
-        currentAudio = new Audio(`/api/tts?text=${encodeURIComponent(data.reply)}`);
-        currentAudio.play().catch(e => console.warn("Audio autoplay blocked:", e));
-
-        // 4. Resume listening only after speech has completely finished
-        currentAudio.onended = () => {
-          currentAudio = null;
+        playVoice(data.reply, () => {
           animateWaves(false);
           awaitingDirective = false;
           accumulatedDirective = "";
@@ -619,7 +655,7 @@
           if (isListening && recognizer) {
             try { recognizer.start(); } catch (e) {}
           }
-        };
+        });
       } catch (err) {
         animateWaves(false);
         awaitingDirective = false;
@@ -663,8 +699,8 @@
       }
 
       recognizer.onend = () => {
-        // Auto-restart only if listening mode is active AND audio is not currently playing
-        if (isListening && !currentAudio) {
+        const isSpeaking = ('speechSynthesis' in window && window.speechSynthesis.speaking) || currentAudio !== null;
+        if (isListening && !isSpeaking) {
           setTimeout(() => {
             try { recognizer.start(); } catch (e) {}
           }, 300);
