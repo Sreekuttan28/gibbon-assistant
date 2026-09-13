@@ -25,7 +25,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v8")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v9")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -59,54 +59,84 @@ def reset_memory():
     conversation_history = []
 
 def query_gemini(prompt: str, key: str) -> str:
+    """Uses the official Chats API to support Automatic Function Calling & Google Search Grounding."""
     client = genai.Client(api_key=key)
-    contents = []
-    for turn in conversation_history[-8:]:
-        role = "user" if turn["role"] == "user" else "model"
-        contents.append(types.Content(role=role, parts=[types.Part.from_text(text=turn["content"])]))
-    contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
-
     candidate_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    last_err = None
+
     for m in candidate_models:
         try:
-            response = client.models.generate_content(
+            # Build chat session with system instruction and search tools
+            chat = client.chats.create(
                 model=m,
-                contents=contents,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_INSTRUCTION,
                     tools=[{"google_search": {}}]
                 )
             )
-            return response.text.strip()
+
+            # Replay recent context into the session if available
+            for turn in conversation_history[-4:]:
+                if turn["role"] == "user":
+                    try:
+                        chat.send_message(turn["content"])
+                    except Exception:
+                        pass
+
+            response = chat.send_message(prompt)
+            if response and response.text:
+                return response.text.strip()
         except Exception as e:
-            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+            err_str = str(e)
+            print(f"Gemini {m} failed: {err_str}")
+            last_err = e
+            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
                 raise e
             continue
-    raise RuntimeError("Gemini models failed.")
+
+    raise last_err or RuntimeError("Gemini models failed.")
 
 def query_groq(prompt: str) -> str:
+    """Fallback using Groq with verified model fallbacks."""
     groq_key = os.getenv("GROQ_API_KEY")
     if not groq_key:
-        raise RuntimeError("GROQ_API_KEY not set.")
+        raise RuntimeError("GROQ_API_KEY not configured.")
 
     client = Groq(api_key=groq_key)
     messages = [{"role": "system", "content": SYSTEM_INSTRUCTION}]
-    for turn in conversation_history[-8:]:
+    for turn in conversation_history[-6:]:
         messages.append({"role": turn["role"], "content": turn["content"]})
     messages.append({"role": "user", "content": prompt})
 
-    chat_completion = client.chat.completions.create(
-        messages=messages,
-        model="llama-3.3-70b-versatile",
-        temperature=0.6,
-        max_tokens=220
-    )
-    return chat_completion.choices[0].message.content.strip()
+    # Groq supported model identifiers
+    candidate_groq_models = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "llama3-70b-8192"
+    ]
+    last_err = None
+
+    for model_name in candidate_groq_models:
+        try:
+            chat_completion = client.chat.completions.create(
+                messages=messages,
+                model=model_name,
+                temperature=0.6,
+                max_tokens=220
+            )
+            return chat_completion.choices[0].message.content.strip()
+        except Exception as err:
+            print(f"Groq {model_name} failed: {err}")
+            last_err = err
+            continue
+
+    raise last_err or RuntimeError("All Groq models failed.")
 
 def ask_ai_brain(prompt: str) -> str:
     global gemini_key_index, conversation_history
     gemini_keys = get_gemini_keys()
 
+    # 1. Attempt Gemini with key rotation
     if gemini_keys:
         for _ in range(len(gemini_keys)):
             current_key = gemini_keys[gemini_key_index]
@@ -119,16 +149,18 @@ def ask_ai_brain(prompt: str) -> str:
                 print(f"Gemini key {gemini_key_index + 1} exhausted/error: {e}")
                 gemini_key_index = (gemini_key_index + 1) % len(gemini_keys)
 
+    # 2. Seamless failover to Groq
     if os.getenv("GROQ_API_KEY"):
         try:
+            print("Engaging Groq failover engine...")
             reply = query_groq(prompt)
             conversation_history.append({"role": "user", "content": prompt})
             conversation_history.append({"role": "assistant", "content": reply})
             return reply
         except Exception as groq_err:
-            print(f"Groq failover error: {groq_err}")
+            print(f"Groq engine exception: {groq_err}")
 
-    return "Apologies Master, my cognitive links are temporarily rate-limited. Please allow me 30 seconds."
+    return "Apologies Master, our neural connections are temporarily rate-limited. Please give me 30 seconds."
 
 def compute_route_and_distance(origin_str: str, dest_str: str) -> dict:
     try:
