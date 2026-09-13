@@ -6,3 +6,4 @@ requests
 geopy
 duckduckgo-search
 google-genai
+groq
