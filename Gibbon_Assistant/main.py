@@ -6,6 +6,7 @@ import sqlite3
 import requests
 from urllib.parse import quote
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
@@ -25,7 +26,12 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v18")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v19")
+IST = ZoneInfo("Asia/Kolkata")
+
+def get_ist_now() -> datetime:
+    """Always returns current time in Indian Standard Time (IST)."""
+    return datetime.now(IST)
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -42,13 +48,18 @@ def init_db():
 init_db()
 
 def get_dynamic_system_instruction() -> str:
-    now_str = datetime.now().strftime("%A, %B %d, %Y at %I:%M %p")
+    now_ist = get_ist_now()
+    now_str = now_ist.strftime("%A, %B %d, %Y at %I:%M %p IST")
     return (
-        "You are Gibbon, a bright, melodic, and intelligent personal AI assistant with a natural human female voice. "
-        "Engineered and deployed by Mokuttan Labs. Always address the user as Chief. "
-        "Keep answers warm, clear, conversational, and under 3 sentences unless crafting an explicit generation prompt. "
-        f"The current real-world date and time is {now_str}. "
-        "Maintain context of earlier questions, recommendations, and conversation history."
+        "You are Gibbon, a crisp, modern, intelligent female personal AI assistant engineered by Mokuttan Labs. "
+        "Always address the user as Chief. "
+        f"The current real-world date and time is {now_str} (Indian Standard Time). "
+        "CRITICAL TIMING & SCHEDULE RULES: "
+        "1. When calculating sleep, waking, or working hours, calculate step-by-step arithmetic before speaking. "
+        "2. If the user works late (e.g., until 2:00 AM), sleep must begin shortly after wrapping up (e.g., 2:30 AM), NOT hours later. "
+        "3. A standard 7.5 to 8 hour sleep block after 2:30 AM means waking between 10:00 AM and 10:30 AM. Never suggest waking up at 6:30 AM or 9:00 AM after sleeping at 2:00 AM. "
+        "4. Verify that the start and end of every recommended time block matches real clock hours and adds up to the exact duration stated. "
+        "Keep answers practical, accurate, and concise."
     )
 
 def get_gemini_keys():
@@ -116,8 +127,8 @@ def query_groq(prompt: str) -> str:
             chat_completion = client.chat.completions.create(
                 messages=messages,
                 model=model_name,
-                temperature=0.6,
-                max_tokens=250
+                temperature=0.4,
+                max_tokens=280
             )
             return chat_completion.choices[0].message.content.strip()
         except Exception as err:
@@ -155,7 +166,6 @@ def ask_ai_brain(prompt: str) -> str:
     return "Apologies Chief, both primary and backup cognitive links are temporarily rate-limited. Please allow 30 seconds."
 
 def generate_image_with_fallback(clean_prompt: str) -> str:
-    """Generates images across high-availability neural pipelines."""
     encoded = quote(clean_prompt)
     seed = random.randint(1000, 999999)
     endpoints = [
@@ -178,7 +188,6 @@ def generate_image_with_fallback(clean_prompt: str) -> str:
     return None
 
 def engineer_prompt_for_creator(raw_idea: str) -> str:
-    """Refines a casual user concept into a photorealistic, cinematic prompt for Midjourney/Runway/Sora."""
     instruction = (
         f"Turn this concept into a studio-grade cinematic image & video prompt: '{raw_idea}'. "
         "Format: Provide 1 clean, high-detail visual prompt with lighting, camera lens, resolution, and aesthetic details. Keep it under 50 words."
@@ -195,7 +204,7 @@ def get_live_forecast(city_name: str) -> str:
             f"https://api.open-meteo.com/v1/forecast?"
             f"latitude={loc.latitude}&longitude={loc.longitude}"
             f"&current_weather=true&daily=temperature_2m_max,temperature_2m_min"
-            f"&timezone=auto"
+            f"&timezone=Asia%2FKolkata"
         )
         data = requests.get(url, timeout=10).json()
         current = data.get("current_weather", {})
@@ -242,10 +251,18 @@ async def process_command(request: Request):
     raw_message = data.get("message", "").strip()
     lower = raw_message.lower()
 
-    # Instant Real-world Date & Time
-    if any(k in lower for k in ["date and time", "time and date", "what date and time", "today's date", "current time", "what time is it", "what is the date"]):
-        now_str = datetime.now().strftime("%A, %B %d, %Y at %I:%M %p")
-        return {"reply": f"It is currently {now_str}, Chief."}
+    # Exact Indian Standard Time (IST) Direct Answers
+    if any(k in lower for k in ["what time is it", "current time", "what's the time", "tell me the time", "time now"]):
+        now_time = get_ist_now().strftime("%I:%M %p")
+        return {"reply": f"The current time is {now_time} IST, Chief."}
+
+    if any(k in lower for k in ["what date is it", "today's date", "what is the date", "what day is today", "what's the date"]):
+        now_date = get_ist_now().strftime("%A, %B %d, %Y")
+        return {"reply": f"Today is {now_date}, Chief."}
+
+    if any(k in lower for k in ["date and time", "time and date", "what date and time"]):
+        now_full = get_ist_now().strftime("%A, %B %d, %Y at %I:%M %p")
+        return {"reply": f"It is currently {now_full} IST, Chief."}
 
     if any(k in lower for k in ["clear history", "reset memory", "forget everything", "new conversation"]):
         reset_memory()
@@ -256,17 +273,16 @@ async def process_command(request: Request):
         if len(clean_check) < 2:
             return {"reply": random.choice(GREETING_RESPONSES)}
 
-    # Dedicated Prompt Engineering for Video / Image Generation
-    if any(k in lower for k in ["prompt for", "make a prompt", "create a prompt", "video prompt", "midjourney prompt", "prompt idea"]):
+    # Prompt Engineering for Video / Midjourney
+    if any(k in lower for k in ["prompt for", "make a prompt", "create a prompt", "video prompt", "midjourney prompt"]):
         idea = re.sub(r"\b(gibbon|given|prompt for|make a prompt for|create a prompt for|video prompt for|generate prompt for)\b", "", raw_message, flags=re.IGNORECASE).strip()
         engineered = engineer_prompt_for_creator(idea or raw_message)
         return {"reply": f"Here is your optimized cinematic prompt, Chief:\n\n\"{engineered}\""}
 
-    # Direct Free Neural Image Generation
+    # Neural Image Generation
     elif any(k in lower for k in ["generate image", "create image", "draw", "render image", "make an image"]):
         clean_idea = re.sub(r"\b(gibbon|given|generate an image of|generate image of|create an image of|draw|render|make an image of)\b", "", raw_message, flags=re.IGNORECASE).strip()
         filename = generate_image_with_fallback(clean_idea or "futuristic cyberpunk neon core")
-        
         if filename:
             return {
                 "reply": f"Visual synthesis complete, Chief! Rendered based on '{clean_idea}'.",
@@ -274,10 +290,9 @@ async def process_command(request: Request):
                 "media_url": f"/media/{filename}"
             }
         else:
-            # Automatic fallback: Architect a professional prompt if generation times out
             fallback_prompt = engineer_prompt_for_creator(clean_idea)
             return {
-                "reply": f"The direct image renderer was busy, Chief. Here is a production-grade prompt ready for Midjourney or Sora:\n\n\"{fallback_prompt}\""
+                "reply": f"Direct image renderer was busy, Chief. Here is a production-grade prompt for your project:\n\n\"{fallback_prompt}\""
             }
 
     elif any(k in lower for k in ["forecast", "weather", "temperature", "rain"]):
@@ -291,7 +306,7 @@ async def process_command(request: Request):
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
         c.execute("INSERT INTO reminders (text, remind_at) VALUES (?, ?)", 
-                  (task, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                  (task, get_ist_now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()
         conn.close()
         return {"reply": f"Logged to your reminders, Chief: '{task}'."}
