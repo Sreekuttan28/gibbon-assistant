@@ -390,6 +390,25 @@
     .send-trigger:active {
       transform: scale(0.95);
     }
+
+    .mute-btn {
+  background: rgba(255, 0, 85, 0.15);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+}
+.mute-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
   </style>
 </head>
 <body>
@@ -400,12 +419,16 @@
         <span class="pulse-dot"></span>
         <span id="telemetryStatus">CORE: STANDBY</span>
       </div>
+      
       <div id="liveClock">00:00:00 UTC</div>
       <div class="telemetry-chip">
         <span>LATENCY: </span><span id="pingValue" style="color:var(--primary);">12ms</span>
       </div>
     </div>
     <div class="hud-title">GIBBON <span>AKA</span> ASSISTANT</div>
+    <button id="audioStopBtn" class="mute-btn" title="Stop Voice Playback">
+  🔇 STOP AUDIO
+</button>
   </header>
 
   <main>
@@ -683,6 +706,40 @@
       telemetryStatus.textContent = "BROWSER UNSUPPORTED";
       liveHearing.textContent = "Speech API unsupported. Use Chrome, Edge, or Safari.";
     }
+
+    let currentAudio = null;
+
+// Stop audio button listener
+const audioStopBtn = document.getElementById('audioStopBtn');
+audioStopBtn.addEventListener('click', () => {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
+  animateWaves(false);
+  telemetryStatus.textContent = "CORE: MUTED";
+  liveHearing.textContent = "Voice playback silenced.";
+});
+
+// Update inside sendDirective() where audio plays:
+if (currentAudio) {
+  currentAudio.pause();
+  currentAudio = null;
+}
+
+currentAudio = new Audio(`/api/tts?text=${encodeURIComponent(data.reply)}`);
+currentAudio.play();
+
+currentAudio.onended = () => {
+  currentAudio = null;
+  animateWaves(false);
+  awaitingDirective = false;
+  accumulatedDirective = "";
+  micBtn.classList.remove('listening');
+  telemetryStatus.textContent = "CORE: STANDBY (SAY 'HEY GIBBON')";
+  liveHearing.textContent = "Listening for 'Hey Gibbon'...";
+};
   </script>
 </body>
 </html>
