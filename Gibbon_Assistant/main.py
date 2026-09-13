@@ -25,7 +25,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v17")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v18")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -46,7 +46,7 @@ def get_dynamic_system_instruction() -> str:
     return (
         "You are Gibbon, a bright, melodic, and intelligent personal AI assistant with a natural human female voice. "
         "Engineered and deployed by Mokuttan Labs. Always address the user as Chief. "
-        "Keep answers warm, clear, conversational, and under 3 sentences. "
+        "Keep answers warm, clear, conversational, and under 3 sentences unless crafting an explicit generation prompt. "
         f"The current real-world date and time is {now_str}. "
         "Maintain context of earlier questions, recommendations, and conversation history."
     )
@@ -64,7 +64,7 @@ def reset_memory():
 
 def query_gemini(prompt: str, key: str) -> str:
     client = genai.Client(api_key=key)
-    candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
+    candidate_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
     last_err = None
 
     for m in candidate_models:
@@ -108,10 +108,7 @@ def query_groq(prompt: str) -> str:
         messages.append({"role": turn["role"], "content": turn["content"]})
     messages.append({"role": "user", "content": prompt})
 
-    candidate_groq_models = [
-        "openai/gpt-oss-20b",
-        "llama-3.1-8b-instant"
-    ]
+    candidate_groq_models = ["openai/gpt-oss-20b", "llama-3.1-8b-instant"]
     last_err = None
 
     for model_name in candidate_groq_models:
@@ -120,7 +117,7 @@ def query_groq(prompt: str) -> str:
                 messages=messages,
                 model=model_name,
                 temperature=0.6,
-                max_tokens=220
+                max_tokens=250
             )
             return chat_completion.choices[0].message.content.strip()
         except Exception as err:
@@ -148,7 +145,6 @@ def ask_ai_brain(prompt: str) -> str:
 
     if os.getenv("GROQ_API_KEY"):
         try:
-            print("Routing to Groq failover engine...")
             reply = query_groq(prompt)
             conversation_history.append({"role": "user", "content": prompt})
             conversation_history.append({"role": "assistant", "content": reply})
@@ -158,45 +154,36 @@ def ask_ai_brain(prompt: str) -> str:
 
     return "Apologies Chief, both primary and backup cognitive links are temporarily rate-limited. Please allow 30 seconds."
 
-def compute_route_and_distance(origin_str: str, dest_str: str) -> dict:
-    try:
-        loc1 = geolocator.geocode(origin_str, timeout=10)
-        loc2 = geolocator.geocode(dest_str, timeout=10)
-        if not loc1 or not loc2:
-            return {"error": f"Coordinates unverified for '{origin_str}' or '{dest_str}'."}
+def generate_image_with_fallback(clean_prompt: str) -> str:
+    """Generates images across high-availability neural pipelines."""
+    encoded = quote(clean_prompt)
+    seed = random.randint(1000, 999999)
+    endpoints = [
+        f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&seed={seed}&model=flux&nologo=true",
+        f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&seed={seed}&nologo=true"
+    ]
 
-        url = (
-            f"http://router.project-osrm.org/route/v1/driving/"
-            f"{loc1.longitude},{loc1.latitude};{loc2.longitude},{loc2.latitude}"
-            f"?overview=false&steps=true"
-        )
-        res = requests.get(url, timeout=12).json()
-        if res.get("code") != "Ok":
-            return {"error": "Routing calculation failed on highway grid."}
+    for url in endpoints:
+        try:
+            resp = requests.get(url, timeout=30)
+            if resp.status_code == 200 and len(resp.content) > 5000:
+                filename = f"gibbon_gen_{int(time.time())}.png"
+                filepath = os.path.join(MEDIA_DIR, filename)
+                with open(filepath, "wb") as f:
+                    f.write(resp.content)
+                return filename
+        except Exception as e:
+            print(f"Image pipeline retry failed: {e}")
+            continue
+    return None
 
-        route = res["routes"][0]
-        distance_km = round(route["distance"] / 1000, 1)
-        duration_hrs = round(route["duration"] / 3600, 1)
-
-        key_roads = []
-        for step in route["legs"][0]["steps"]:
-            name = step.get("name")
-            if name and name not in key_roads and not name.startswith("Unnamed"):
-                key_roads.append(name)
-
-        summary_route = " ➔ ".join(key_roads[:3]) if key_roads else "Direct highway"
-        gmaps_url = f"https://www.google.com/maps/dir/?api=1&origin={loc1.latitude},{loc1.longitude}&destination={loc2.latitude},{loc2.longitude}"
-
-        return {
-            "origin": loc1.address.split(",")[0],
-            "destination": loc2.address.split(",")[0],
-            "distance_km": distance_km,
-            "duration_hrs": duration_hrs,
-            "key_route": summary_route,
-            "map_url": gmaps_url
-        }
-    except Exception as e:
-        return {"error": str(e)}
+def engineer_prompt_for_creator(raw_idea: str) -> str:
+    """Refines a casual user concept into a photorealistic, cinematic prompt for Midjourney/Runway/Sora."""
+    instruction = (
+        f"Turn this concept into a studio-grade cinematic image & video prompt: '{raw_idea}'. "
+        "Format: Provide 1 clean, high-detail visual prompt with lighting, camera lens, resolution, and aesthetic details. Keep it under 50 words."
+    )
+    return ask_ai_brain(instruction)
 
 def get_live_forecast(city_name: str) -> str:
     try:
@@ -207,7 +194,7 @@ def get_live_forecast(city_name: str) -> str:
         url = (
             f"https://api.open-meteo.com/v1/forecast?"
             f"latitude={loc.latitude}&longitude={loc.longitude}"
-            f"&current_weather=true&daily=temperature_2m_max,temperature_2m_min,weathercode"
+            f"&current_weather=true&daily=temperature_2m_max,temperature_2m_min"
             f"&timezone=auto"
         )
         data = requests.get(url, timeout=10).json()
@@ -223,33 +210,8 @@ def get_live_forecast(city_name: str) -> str:
             f"Current temperature in {city_clean} is {temp}°C with wind speeds at {wind} km/h. "
             f"Today's forecast peaks at {max_t}°C with a low of {min_t}°C."
         )
-    except Exception as e:
+    except Exception:
         return "Telemetry failed to fetch live weather metrics, Chief."
-
-def generate_free_image(prompt: str) -> str:
-    try:
-        encoded_prompt = quote(prompt)
-        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
-        response = requests.get(url, timeout=45)
-        if response.status_code == 200:
-            filename = f"gibbon_img_{int(time.time())}.png"
-            filepath = os.path.join(MEDIA_DIR, filename)
-            with open(filepath, "wb") as f:
-                f.write(response.content)
-            return filename
-    except Exception as e:
-        print(f"Image error: {e}")
-    return None
-
-def search_live_web(query: str) -> str:
-    try:
-        with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=3))
-            if results:
-                return " | ".join([f"{r.get('title', '')}: {r.get('body', '')}" for r in results])
-    except Exception as e:
-        print(f"Search error: {e}")
-    return "Could not retrieve live search data right now."
 
 GREETING_RESPONSES = [
     "Hello Chief! Mokuttan Labs core is online. What can I do for you today?",
@@ -280,48 +242,49 @@ async def process_command(request: Request):
     raw_message = data.get("message", "").strip()
     lower = raw_message.lower()
 
-    if any(k in lower for k in ["what time is it", "current time", "what's the time", "tell me the time"]):
-        now_time = datetime.now().strftime("%I:%M %p")
-        return {"reply": f"The current time is {now_time}, Chief."}
+    # Instant Real-world Date & Time
+    if any(k in lower for k in ["date and time", "time and date", "what date and time", "today's date", "current time", "what time is it", "what is the date"]):
+        now_str = datetime.now().strftime("%A, %B %d, %Y at %I:%M %p")
+        return {"reply": f"It is currently {now_str}, Chief."}
 
-    if any(k in lower for k in ["what date is it", "today's date", "what is the date", "what day is today", "what's the date"]):
-        now_date = datetime.now().strftime("%A, %B %d, %Y")
-        return {"reply": f"Today is {now_date}, Chief."}
-
-    if any(k in lower for k in ["clear history", "reset memory", "forget everything", "new conversation", "clear conversation"]):
+    if any(k in lower for k in ["clear history", "reset memory", "forget everything", "new conversation"]):
         reset_memory()
         return {"reply": "Memory cleared, Chief. We are on a clean slate."}
 
-    if any(greet in lower for greet in ["hello", "hi", "hey", "wake up", "good morning", "good evening"]):
-        clean_check = re.sub(r"\b(gibbon|given|hey|hi|hello|good morning|good evening|good afternoon|wake up)\b", "", lower).strip()
+    if any(greet in lower for greet in ["hello", "hi", "hey", "wake up"]):
+        clean_check = re.sub(r"\b(gibbon|given|hey|hi|hello|wake up)\b", "", lower).strip()
         if len(clean_check) < 2:
             return {"reply": random.choice(GREETING_RESPONSES)}
 
-    if any(k in lower for k in ["forecast", "weather", "temperature", "rain"]):
+    # Dedicated Prompt Engineering for Video / Image Generation
+    if any(k in lower for k in ["prompt for", "make a prompt", "create a prompt", "video prompt", "midjourney prompt", "prompt idea"]):
+        idea = re.sub(r"\b(gibbon|given|prompt for|make a prompt for|create a prompt for|video prompt for|generate prompt for)\b", "", raw_message, flags=re.IGNORECASE).strip()
+        engineered = engineer_prompt_for_creator(idea or raw_message)
+        return {"reply": f"Here is your optimized cinematic prompt, Chief:\n\n\"{engineered}\""}
+
+    # Direct Free Neural Image Generation
+    elif any(k in lower for k in ["generate image", "create image", "draw", "render image", "make an image"]):
+        clean_idea = re.sub(r"\b(gibbon|given|generate an image of|generate image of|create an image of|draw|render|make an image of)\b", "", raw_message, flags=re.IGNORECASE).strip()
+        filename = generate_image_with_fallback(clean_idea or "futuristic cyberpunk neon core")
+        
+        if filename:
+            return {
+                "reply": f"Visual synthesis complete, Chief! Rendered based on '{clean_idea}'.",
+                "media_type": "image",
+                "media_url": f"/media/{filename}"
+            }
+        else:
+            # Automatic fallback: Architect a professional prompt if generation times out
+            fallback_prompt = engineer_prompt_for_creator(clean_idea)
+            return {
+                "reply": f"The direct image renderer was busy, Chief. Here is a production-grade prompt ready for Midjourney or Sora:\n\n\"{fallback_prompt}\""
+            }
+
+    elif any(k in lower for k in ["forecast", "weather", "temperature", "rain"]):
         match = re.search(r"(?:in|for|at)\s+([a-zA-Z\s]+)", lower)
         target_city = match.group(1).strip() if match else "Bangalore"
         report = get_live_forecast(target_city)
         return {"reply": f"{random.choice(THINKING_PREFIXES)}{report}"}
-
-    elif "distance" in lower or "route" in lower or "how far" in lower:
-        match = re.search(r"from\s+([a-zA-Z0-9\s,]+?)\s+to\s+([a-zA-Z0-9\s,]+)", lower)
-        if not match:
-            match = re.search(r"between\s+([a-zA-Z0-9\s,]+?)\s+and\s+([a-zA-Z0-9\s,]+)", lower)
-
-        if match:
-            origin = match.group(1).strip()
-            destination = match.group(2).replace("?", "").strip()
-            nav = compute_route_and_distance(origin, destination)
-            if "error" in nav:
-                return {"reply": f"Navigation error: {nav['error']}"}
-
-            prefix = random.choice(THINKING_PREFIXES)
-            reply_text = (
-                f"{prefix}The road distance from {nav['origin']} to {nav['destination']} "
-                f"is {nav['distance_km']} km. Travel time is approximately {nav['duration_hrs']} hours via {nav['key_route']}."
-            )
-            return {"reply": reply_text, "map_link": nav["map_url"]}
-        return {"reply": "Please specify both the origin and destination, Chief. Example: 'Distance from Bangalore to Mysore'."}
 
     elif "remind me to" in lower or "remind me" in lower:
         task = re.sub(r"\b(gibbon|given|remind me to|remind me)\b", "", lower).strip()
@@ -344,23 +307,6 @@ async def process_command(request: Request):
             return {"reply": f"Your pending schedule, Chief: {tasks}."}
         return {"reply": "Your schedule is clear, Chief. No pending tasks."}
 
-    elif any(k in lower for k in ["generate image", "create an image", "draw", "make an image"]):
-        prompt = re.sub(r"\b(gibbon|given|generate an image of|generate image of|create an image of|draw|make an image of)\b", "", lower).strip()
-        filename = generate_free_image(prompt)
-        if filename:
-            return {
-                "reply": f"Visual synthesis complete, Chief. Saved as {filename}.",
-                "media_type": "image",
-                "media_url": f"/media/{filename}"
-            }
-        return {"reply": "Image rendering encountered an issue. Please try again."}
-
-    elif any(k in lower for k in ["ticket", "flight", "bus", "train", "fare", "cheap price", "compare"]):
-        search_query = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
-        search_summary = search_live_web(f"{search_query} fare price booking")
-        prefix = random.choice(THINKING_PREFIXES)
-        return {"reply": f"{prefix}Here is the latest fare info: {search_summary[:280]}..."}
-
     clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
     ai_answer = ask_ai_brain(clean_prompt or raw_message)
     return {"reply": ai_answer}
@@ -368,8 +314,6 @@ async def process_command(request: Request):
 @app.get("/api/tts")
 async def text_to_speech(text: str):
     spoken_text = text[:360]
-    # AvaNeural provides organic breath, melodic cadence, and human warmth
-    # Pitch tuned to +2Hz to give it a lighter, musical quality
     candidate_voices = ["en-US-AvaNeural", "en-US-AriaNeural", "en-US-JennyNeural"]
     audio_data = bytearray()
 
@@ -388,8 +332,7 @@ async def text_to_speech(text: str):
                     audio_data.extend(chunk["data"])
             if len(audio_data) > 0:
                 break
-        except Exception as e:
-            print(f"TTS {voice_name} error: {e}")
+        except Exception:
             continue
 
     return Response(content=bytes(audio_data), media_type="audio/mpeg")
