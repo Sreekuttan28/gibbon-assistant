@@ -13,6 +13,7 @@ from geopy.geocoders import Nominatim
 from duckduckgo_search import DDGS
 from google import genai
 from google.genai import types
+from groq import Groq
 import edge_tts
 
 app = FastAPI(title="GIBBON AKA ASSISTANT")
@@ -24,7 +25,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v5")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v8")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -46,91 +47,90 @@ SYSTEM_INSTRUCTION = (
     "Crucially, maintain context of earlier questions, recommendations, and conversation history."
 )
 
-chat_session = None
-ai_client = None
+def get_gemini_keys():
+    keys_str = os.getenv("GEMINI_API_KEYS") or os.getenv("GEMINI_API_KEY") or ""
+    return [k.strip() for k in keys_str.split(",") if k.strip()]
 
-def init_chat_session():
-    """Initializes the multi-turn session with the active Gemini 3 model."""
-    global chat_session, ai_client
-    current_key = os.getenv("GEMINI_API_KEY")
-    if not current_key:
-        print("GEMINI_API_KEY is not set in environment.")
-        chat_session = None
-        return "ERROR: GEMINI_API_KEY environment variable is not set in Render."
+gemini_key_index = 0
+conversation_history = []
 
-    try:
-        ai_client = genai.Client(api_key=current_key)
-    except Exception as e:
-        print(f"Client init failed: {e}")
-        chat_session = None
-        return f"Client creation error: {str(e)}"
+def reset_memory():
+    global conversation_history
+    conversation_history = []
 
-    # Use the active Gemini 3 series models
-    candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
-    last_err = None
+def query_gemini(prompt: str, key: str) -> str:
+    client = genai.Client(api_key=key)
+    contents = []
+    for turn in conversation_history[-8:]:
+        role = "user" if turn["role"] == "user" else "model"
+        contents.append(types.Content(role=role, parts=[types.Part.from_text(text=turn["content"])]))
+    contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
 
-    for model_name in candidate_models:
+    candidate_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    for m in candidate_models:
         try:
-            chat_session = ai_client.chats.create(
-                model=model_name,
+            response = client.models.generate_content(
+                model=m,
+                contents=contents,
                 config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_INSTRUCTION
+                    system_instruction=SYSTEM_INSTRUCTION,
+                    tools=[{"google_search": {}}]
                 )
             )
-            print(f"Chat session active using model: {model_name}")
-            return None
+            return response.text.strip()
         except Exception as e:
-            print(f"Failed initiating {model_name}: {e}")
-            last_err = e
+            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                raise e
+            continue
+    raise RuntimeError("Gemini models failed.")
 
-    chat_session = None
-    return f"Failed connecting to Gemini: {str(last_err)}"
+def query_groq(prompt: str) -> str:
+    groq_key = os.getenv("GROQ_API_KEY")
+    if not groq_key:
+        raise RuntimeError("GROQ_API_KEY not set.")
 
-init_chat_session()
+    client = Groq(api_key=groq_key)
+    messages = [{"role": "system", "content": SYSTEM_INSTRUCTION}]
+    for turn in conversation_history[-8:]:
+        messages.append({"role": turn["role"], "content": turn["content"]})
+    messages.append({"role": "user", "content": prompt})
 
-GREETING_RESPONSES = [
-    "Hey Master, welcome back. All systems are serene and standing by.",
-    "Online at your command, Master. What would you like to explore today?",
-    "Gibbon core initialized, Master. How may I assist you?",
-    "Good to see you, Master. Systems check out clean. What's on your mind?"
-]
-
-THINKING_PREFIXES = [
-    "Checking that for you, Master... ",
-    "On it, Master. ",
-    "Scanning the data stream... ",
-    "Right away, Master. "
-]
+    chat_completion = client.chat.completions.create(
+        messages=messages,
+        model="llama-3.3-70b-versatile",
+        temperature=0.6,
+        max_tokens=220
+    )
+    return chat_completion.choices[0].message.content.strip()
 
 def ask_ai_brain(prompt: str) -> str:
-    """Answers using multi-turn conversation memory with direct error diagnostics."""
-    global chat_session, ai_client
+    global gemini_key_index, conversation_history
+    gemini_keys = get_gemini_keys()
 
-    if not os.getenv("GEMINI_API_KEY"):
-        return "Master, GEMINI_API_KEY is not set in Render's Environment settings."
+    if gemini_keys:
+        for _ in range(len(gemini_keys)):
+            current_key = gemini_keys[gemini_key_index]
+            try:
+                reply = query_gemini(prompt, current_key)
+                conversation_history.append({"role": "user", "content": prompt})
+                conversation_history.append({"role": "assistant", "content": reply})
+                return reply
+            except Exception as e:
+                print(f"Gemini key {gemini_key_index + 1} exhausted/error: {e}")
+                gemini_key_index = (gemini_key_index + 1) % len(gemini_keys)
 
-    if chat_session is None:
-        err = init_chat_session()
-        if err:
-            return f"Master, authentication issue: {err}"
-
-    try:
-        response = chat_session.send_message(prompt)
-        return response.text.strip()
-    except Exception as e:
-        print(f"Direct Gemini exception: {type(e).__name__}: {e}")
-        # Try re-initializing once on failure
-        err = init_chat_session()
-        if err:
-            return f"Master, connection issue: {err}"
+    if os.getenv("GROQ_API_KEY"):
         try:
-            response = chat_session.send_message(prompt)
-            return response.text.strip()
-        except Exception as retry_err:
-            return f"Neural link error [{type(retry_err).__name__}]: {str(retry_err)}"
+            reply = query_groq(prompt)
+            conversation_history.append({"role": "user", "content": prompt})
+            conversation_history.append({"role": "assistant", "content": reply})
+            return reply
+        except Exception as groq_err:
+            print(f"Groq failover error: {groq_err}")
+
+    return "Apologies Master, my cognitive links are temporarily rate-limited. Please allow me 30 seconds."
 
 def compute_route_and_distance(origin_str: str, dest_str: str) -> dict:
-    """Calculates road distance, travel duration, and route via OpenStreetMap & OSRM."""
     try:
         loc1 = geolocator.geocode(origin_str, timeout=10)
         loc2 = geolocator.geocode(dest_str, timeout=10)
@@ -171,7 +171,6 @@ def compute_route_and_distance(origin_str: str, dest_str: str) -> dict:
         return {"error": str(e)}
 
 def get_live_forecast(city_name: str) -> str:
-    """Fetches real-time weather and forecast via Open-Meteo."""
     try:
         loc = geolocator.geocode(city_name, timeout=10)
         if not loc:
@@ -197,11 +196,9 @@ def get_live_forecast(city_name: str) -> str:
             f"Today's forecast peaks at {max_t}°C with a low of {min_t}°C."
         )
     except Exception as e:
-        print(f"Weather error: {e}")
         return "Telemetry failed to fetch live weather metrics, Master."
 
 def generate_free_image(prompt: str) -> str:
-    """Generates an image via Pollinations.ai and saves locally."""
     try:
         encoded_prompt = quote(prompt)
         url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
@@ -217,7 +214,6 @@ def generate_free_image(prompt: str) -> str:
     return None
 
 def search_live_web(query: str) -> str:
-    """Searches DuckDuckGo for live tickets or pricing."""
     try:
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=3))
@@ -226,6 +222,20 @@ def search_live_web(query: str) -> str:
     except Exception as e:
         print(f"Search error: {e}")
     return "Could not retrieve live search data right now."
+
+GREETING_RESPONSES = [
+    "Hey Master, welcome back. All systems are serene and standing by.",
+    "Online at your command, Master. What would you like to explore today?",
+    "Gibbon core initialized, Master. How may I assist you?",
+    "Good to see you, Master. Systems check out clean. What's on your mind?"
+]
+
+THINKING_PREFIXES = [
+    "Checking that for you, Master... ",
+    "On it, Master. ",
+    "Scanning the data stream... ",
+    "Right away, Master. "
+]
 
 @app.get("/")
 def serve_index():
@@ -237,25 +247,21 @@ async def process_command(request: Request):
     raw_message = data.get("message", "").strip()
     lower = raw_message.lower()
 
-    # 1. Reset / Clear Memory
     if any(k in lower for k in ["clear history", "reset memory", "forget everything", "new conversation"]):
-        init_chat_session()
+        reset_memory()
         return {"reply": "Memory matrix cleared, Master. We are operating on a clean slate."}
 
-    # 2. Greetings
     if any(greet in lower for greet in ["hello", "hi", "hey", "wake up", "good morning", "good evening"]):
         clean_check = re.sub(r"\b(gibbon|given|hey|hi|hello|good morning|good evening|good afternoon|wake up)\b", "", lower).strip()
         if len(clean_check) < 2:
             return {"reply": random.choice(GREETING_RESPONSES)}
 
-    # 3. Weather & Forecast
     if any(k in lower for k in ["forecast", "weather", "temperature", "rain"]):
         match = re.search(r"(?:in|for|at)\s+([a-zA-Z\s]+)", lower)
         target_city = match.group(1).strip() if match else "Bangalore"
         report = get_live_forecast(target_city)
         return {"reply": f"{random.choice(THINKING_PREFIXES)}{report}"}
 
-    # 4. Distance & Route
     elif "distance" in lower or "route" in lower or "how far" in lower:
         match = re.search(r"from\s+([a-zA-Z0-9\s,]+?)\s+to\s+([a-zA-Z0-9\s,]+)", lower)
         if not match:
@@ -276,7 +282,6 @@ async def process_command(request: Request):
             return {"reply": reply_text, "map_link": nav["map_url"]}
         return {"reply": "Please specify origin and destination, Master. Example: 'Distance from Bangalore to Mysore'."}
 
-    # 5. Reminders
     elif "remind me to" in lower or "remind me" in lower:
         task = re.sub(r"\b(gibbon|given|remind me to|remind me)\b", "", lower).strip()
         conn = sqlite3.connect(DB_FILE)
@@ -298,7 +303,6 @@ async def process_command(request: Request):
             return {"reply": f"Your current pending schedule, Master: {tasks}."}
         return {"reply": "Your schedule is clear right now, Master. No pending reminders."}
 
-    # 6. Image Generation
     elif any(k in lower for k in ["generate image", "create an image", "draw", "make an image"]):
         prompt = re.sub(r"\b(gibbon|given|generate an image of|generate image of|create an image of|draw|make an image of)\b", "", lower).strip()
         filename = generate_free_image(prompt)
@@ -310,26 +314,24 @@ async def process_command(request: Request):
             }
         return {"reply": "Image rendering pipeline encountered an issue. Please try again."}
 
-    # 7. Live Fare Search
     elif any(k in lower for k in ["ticket", "flight", "bus", "train", "fare", "cheap price", "compare"]):
         search_query = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
         search_summary = search_live_web(f"{search_query} fare price booking")
         prefix = random.choice(THINKING_PREFIXES)
         return {"reply": f"{prefix}Here is the latest fare info: {search_summary[:280]}..."}
 
-    # 8. General Knowledge & Follow-ups
     clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
     ai_answer = ask_ai_brain(clean_prompt or raw_message)
     return {"reply": ai_answer}
 
 @app.get("/api/tts")
 async def text_to_speech(text: str):
+    spoken_text = text[:320]
     communicate = edge_tts.Communicate(
-        text, 
+        spoken_text, 
         voice="en-GB-LibbyNeural", 
-        rate="-6%", 
-        pitch="-3Hz",
-        volume="-20%"
+        rate="+5%", 
+        volume="-10%"
     )
     audio_data = bytearray()
     async for chunk in communicate.stream():
