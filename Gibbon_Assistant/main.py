@@ -358,12 +358,15 @@ async def process_command(request: Request):
 @app.get("/api/tts")
 async def text_to_speech(text: str):
     spoken_text = text[:320]
+    # 'en-IN-KavyaNeural' has a soft, expressive, storytelling timbre
+    # rate="-8%" gives it a deliberate, gentle narrative cadence
+    # pitch="+2Hz" adds melodic warmth typical of children's storybook narration
     communicate = edge_tts.Communicate(
         spoken_text, 
-        voice="en-GB-LibbyNeural", 
-        rate="-8%",
-        pitch="-4Hz",
-        volume="-15%"
+        voice="en-IN-KavyaNeural",
+        rate="-8%", 
+        pitch="+2Hz",
+        volume="-5%"
     )
     audio_data = bytearray()
     async for chunk in communicate.stream():
