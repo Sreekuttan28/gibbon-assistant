@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GIBBON AKA ASSISTANT</title>
+  <title>GIBBON // MOKUTTAN LABS</title>
   <link rel="manifest" href="/static/manifest.json">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23030712' stroke='%2300f0ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='32' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-dasharray='6 4'/%3E%3Ccircle cx='50' cy='50' r='18' fill='%2300f0ff' opacity='0.85'/%3E%3Cpath d='M50 12 L50 24 M50 76 L50 88 M12 50 L24 50 M76 50 L88 50' stroke='%2300f0ff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
@@ -97,26 +97,37 @@
     }
 
     .brand-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
       border: 1.5px solid var(--primary);
-      box-shadow: 0 0 10px var(--primary-glow);
+      box-shadow: 0 0 12px var(--primary-glow);
       display: flex;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle, #004d61 0%, #030712 90%);
+      background: radial-gradient(circle, #003644 0%, #030712 90%);
+      overflow: hidden;
+      flex-shrink: 0;
     }
 
-    .brand-avatar svg {
-      width: 20px;
-      height: 20px;
-      fill: var(--primary);
+    .brand-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .brand-avatar .avatar-fallback {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: 1px;
     }
 
     .brand-meta h2 {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.92rem;
+      font-size: 0.96rem;
       letter-spacing: 1.5px;
       color: #fff;
     }
@@ -305,9 +316,42 @@
       50% { opacity: 1; transform: scale(1.2); }
     }
 
+    .hud-header-brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .header-logo-badge {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 1px solid var(--primary);
+      background: radial-gradient(circle, #003644 0%, #030712 90%);
+      box-shadow: 0 0 8px var(--primary-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .header-logo-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .header-logo-badge span {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 900;
+      color: var(--primary);
+    }
+
     .hud-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.15rem;
+      font-size: 1.12rem;
       font-weight: 900;
       letter-spacing: 2px;
       color: #fff;
@@ -315,7 +359,6 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      margin-top: 2px;
     }
 
     .hud-title span {
@@ -333,7 +376,86 @@
       flex: 1;
       min-height: 0;
       justify-content: flex-start;
-      padding-top: 8px;
+      padding-top: 6px;
+    }
+
+    /* Interactive Reactor Ring Core */
+    .reactor-container {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: -2px;
+      flex-shrink: 0;
+    }
+
+    .reactor-ring-outer {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1.5px dashed var(--primary);
+      opacity: 0.65;
+      animation: spinClockwise 12s linear infinite;
+    }
+
+    .reactor-ring-inner {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 0, 85, 0.4);
+      border-top-color: var(--accent);
+      animation: spinCounter 6s linear infinite;
+    }
+
+    .reactor-core-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid var(--primary);
+      background: radial-gradient(circle, #02242e 0%, #030712 90%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px var(--primary-glow);
+      overflow: hidden;
+      z-index: 2;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .reactor-core-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .reactor-core-logo span {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: var(--primary);
+    }
+
+    .reactor-container.active .reactor-core-logo {
+      transform: scale(1.08);
+      box-shadow: 0 0 20px var(--accent-glow), 0 0 30px var(--primary-glow);
+    }
+
+    .reactor-container.active .reactor-ring-outer {
+      opacity: 1;
+      border-color: var(--accent);
+      animation-duration: 4s;
+    }
+
+    @keyframes spinClockwise {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes spinCounter {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
     }
 
     .hud-card {
@@ -348,8 +470,8 @@
       display: flex;
       flex-direction: column;
       flex: 1;
-      max-height: 52vh;
-      min-height: 120px;
+      max-height: 48vh;
+      min-height: 110px;
       position: relative;
     }
 
@@ -613,14 +735,12 @@
     <div class="brand-box">
       <div class="brand-left">
         <div class="brand-avatar">
-          <svg viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
-            <path d="M12 6v6l4 2"/>
-          </svg>
+          <img src="/static/logo.png" alt="MOKUTTAN" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <div class="avatar-fallback" style="display:none;">ML</div>
         </div>
         <div class="brand-meta">
-          <h2>GIBBON</h2>
-          <span>NEURAL COGNITIVE V2.7</span>
+          <h2>MOKUTTAN LABS</h2>
+          <span>GIBBON NEURAL CORE V2.7</span>
         </div>
       </div>
       <button class="close-sidebar-btn" id="closeSidebarBtn" aria-label="Close Drawer">✕</button>
@@ -652,16 +772,32 @@
           <span>LINK: </span><span id="pingValue" style="color:var(--primary);">ONLINE</span>
         </div>
       </div>
-      <div class="hud-title">GIBBON <span>AKA</span> ASSISTANT</div>
+      <div class="hud-header-brand-wrap">
+        <div class="header-logo-badge">
+          <img src="/static/logo.png" alt="ML" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <span style="display:none;">ML</span>
+        </div>
+        <div class="hud-title">GIBBON <span>//</span> MOKUTTAN LABS</div>
+      </div>
     </header>
 
     <main>
+      <!-- Interactive Reactor Ring Visualizer -->
+      <div class="reactor-container" id="reactorContainer">
+        <div class="reactor-ring-outer"></div>
+        <div class="reactor-ring-inner"></div>
+        <div class="reactor-core-logo">
+          <img src="/static/logo.png" alt="ML Core" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <span style="display:none;">ML</span>
+        </div>
+      </div>
+
       <div class="hud-card">
         <div class="log-speaker">
-          <span id="speakerLabel">FEEDBACK</span>
+          <span id="speakerLabel">MOKUTTAN LABS</span>
           <span id="timestamp">SYS: ACTIVE</span>
         </div>
-        <div class="log-content" id="logContent">"Hello Master. Systems online and ready. What can I help you with?"</div>
+        <div class="log-content" id="logContent">"Hello Chief. Systems online at Mokuttan Labs. Standing by for instructions."</div>
         <div class="media-holder" id="mediaHolder"></div>
         <a href="#" target="_blank" class="hud-btn" id="navBtn">Open Plotted Coordinates</a>
       </div>
@@ -734,6 +870,7 @@
     const closeSidebarBtn = document.getElementById('closeSidebarBtn');
     const sidebarBackdrop = document.getElementById('sidebarBackdrop');
     const hudSidebar = document.getElementById('hudSidebar');
+    const reactorContainer = document.getElementById('reactorContainer');
 
     const wakeAliases = ["gibbon", "given", "gibons", "gibin", "gabon", "kiban", "gibson"];
     let waveInterval;
@@ -803,8 +940,8 @@
       try {
         await fetch('/api/clear', { method: 'POST' });
       } catch (e) {}
-      speakerLabel.textContent = "GIBBON CORE";
-      logContent.textContent = "Memory cleared, Master. Ready for a new directive.";
+      speakerLabel.textContent = "MOKUTTAN LABS";
+      logContent.textContent = "Memory cleared, Chief. Ready for a new directive.";
       closeSidebar();
     }
 
@@ -829,6 +966,7 @@
         currentAudio = null;
       }
       animateWaves(false);
+      reactorContainer.classList.remove('active');
       telemetryStatus.textContent = "MUTED";
       liveHearing.textContent = "Audio stopped.";
 
@@ -839,6 +977,7 @@
 
     function animateWaves(active) {
       if (active) {
+        reactorContainer.classList.add('active');
         waveInterval = setInterval(() => {
           waveBars.forEach(b => {
             b.style.height = `${Math.floor(Math.random() * 10) + 3}px`;
@@ -846,11 +985,11 @@
         }, 110);
       } else {
         clearInterval(waveInterval);
+        reactorContainer.classList.remove('active');
         waveBars.forEach(b => b.style.height = '3px');
       }
     }
 
-    // Natural Real Male Voice
     function playVoice(text, onComplete) {
       const cleanText = text.replace(/[*#_`]/g, '').trim();
 
@@ -859,21 +998,21 @@
         const utterance = new SpeechSynthesisUtterance(cleanText);
         const voices = window.speechSynthesis.getVoices();
 
-        const naturalManVoice = voices.find(v => 
-          v.name.includes("Brian") ||
-          v.name.includes("Guy") ||
-          v.name.includes("Google UK English Male") ||
-          v.name.includes("Google US English Male") ||
-          v.name.includes("David") ||
-          (v.name.toLowerCase().includes("male") && !v.name.toLowerCase().includes("female"))
-        ) || voices.find(v => v.lang.startsWith("en-") && v.name.toLowerCase().includes("male"));
+        const siriVoice = voices.find(v => 
+          v.name.includes("Samantha") ||
+          v.name.includes("Siri") ||
+          v.name.includes("Karen") ||
+          v.name.includes("Jenny") ||
+          v.name.includes("Google US English Female") ||
+          (v.lang === "en-US" && v.name.toLowerCase().includes("female"))
+        ) || voices.find(v => v.lang === "en-US");
 
-        if (naturalManVoice) {
-          utterance.voice = naturalManVoice;
+        if (siriVoice) {
+          utterance.voice = siriVoice;
         }
 
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
+        utterance.rate = 1.04;
+        utterance.pitch = 1.02;
         utterance.volume = 1.0;
 
         utterance.onend = () => onComplete();
@@ -912,7 +1051,7 @@
       }
 
       telemetryStatus.textContent = "SYNCING";
-      speakerLabel.textContent = "MASTER DIRECTIVE";
+      speakerLabel.textContent = "CHIEF DIRECTIVE";
       logContent.textContent = `"${command}"`;
       liveHearing.textContent = "";
       navBtn.style.display = "none";
@@ -1012,7 +1151,7 @@
           accumulatedDirective = "";
           micBtn.classList.add('listening');
           telemetryStatus.textContent = "SPEAK NOW";
-          liveHearing.textContent = "I'm listening, Master...";
+          liveHearing.textContent = "I'm listening, Chief...";
         }
       });
 
