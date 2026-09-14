@@ -48,7 +48,7 @@
     .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: 95; backdrop-filter: blur(4px); }
     .sidebar-backdrop.active { display: block; }
 
-    /* SIDEBAR - CONSTANT OPEN ON LAPTOP (>= 900px), OVERLAY ON MOBILE */
+    /* SIDEBAR */
     .hud-sidebar { width: var(--sidebar-width); background: rgba(8, 14, 28, 0.98); border-right: 1px solid var(--panel-border); backdrop-filter: blur(16px); display: flex; flex-direction: column; padding: 14px; z-index: 100; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; position: fixed; top: 0; bottom: 0; left: 0; transform: translateX(-100%); }
     .hud-sidebar.open { transform: translateX(0); }
 
@@ -135,7 +135,6 @@
     
     header { width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
     
-    /* REMOVED HEADER BAR BORDER/BACKGROUND AS REQUESTED FOR CLEAN LOOK */
     .hud-header-bar {
       width: 100%;
       display: flex;
@@ -153,8 +152,6 @@
 
     .center-brand-title { display: flex; align-items: center; gap: 6px; flex-shrink: 1; min-width: 0; overflow: hidden; }
     .center-brand-title img { width: 22px; height: 22px; object-fit: contain; border-radius: 6px; background: #fff; padding: 2px; flex-shrink: 0; }
-    
-    /* CLEAN FLUID TEXT STYLE WITHOUT HARD WRAPPING OVERLAPS */
     .title-styled-text { font-family: 'Syncopate', sans-serif; font-size: clamp(0.6rem, 1.8vw, 0.82rem); font-weight: 700; letter-spacing: 1px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .title-styled-text span { color: var(--primary); margin: 0 2px; }
 
@@ -164,7 +161,6 @@
     .date-row { font-size: 0.62rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; white-space: nowrap; }
     .time-row { font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; color: var(--primary); white-space: nowrap; }
 
-    /* RESTORED VISIBILITY FOR WARNING ICON ON MOBILE & DESKTOP */
     .privacy-shield-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fcd34d; font-size: 0.7rem; cursor: pointer; flex-shrink: 0; }
     .privacy-tooltip { display: none; position: absolute; top: 30px; right: 0; width: 220px; background: #0b1326; border: 1px solid rgba(245, 158, 11, 0.6); box-shadow: 0 4px 16px rgba(0,0,0,0.8); border-radius: 8px; padding: 8px; font-size: 0.68rem; color: #fcd34d; line-height: 1.3; z-index: 200; pointer-events: none; }
     .privacy-shield-btn:hover .privacy-tooltip { display: block; }
@@ -201,10 +197,51 @@
     .spin-ring { width: 12px; height: 12px; border: 2px solid var(--primary); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* FOOTER & DOCK */
-    .hud-footer { width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; padding-top: 35px; }
+    /* FOOTER & DOCK - UPWARD EXPANSION WITH LUFFY RIDING ALONG */
+    .hud-footer { width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; padding-top: 10px; }
     
-    .luffy-dock-perch { position: absolute; top: -26px; right: 38px; width: 66px; height: 68px; z-index: 15; cursor: pointer; user-select: none; }
+    .dock-pill-container { 
+      position: relative; 
+      width: 100%; 
+      display: flex; 
+      align-items: flex-end; 
+      background: #101726; 
+      border: 1.5px solid rgba(0, 240, 255, 0.4); 
+      border-radius: 24px; 
+      padding: 8px 12px; 
+      gap: 6px; 
+      z-index: 10; 
+    }
+    
+    .dock-pill-container textarea { 
+      flex: 1; 
+      min-height: 24px; 
+      max-height: 140px; 
+      background: transparent; 
+      border: none; 
+      color: #fff; 
+      font-family: 'Rajdhani', sans-serif; 
+      font-size: 1.02rem; 
+      outline: none; 
+      resize: none; 
+      overflow-y: auto;
+      line-height: 1.4;
+      padding-top: 2px;
+    }
+
+    /* LUFFY ANCHORED TO TOP EDGE OF THE DOCK - MOVES UPWARDS AUTOMATICALLY AS DOCK EXPANDS */
+    .luffy-dock-perch { 
+      position: absolute; 
+      bottom: calc(100% + 6px); 
+      right: 28px; 
+      width: 66px; 
+      height: 68px; 
+      z-index: 15; 
+      cursor: pointer; 
+      user-select: none; 
+      transition: bottom 0.15s ease-out;
+    }
+    
     .luffy-bubble { position: absolute; top: -24px; left: 50%; transform: translateX(-50%); background: #fff; color: #030712; font-weight: 800; font-size: 0.65rem; padding: 2px 7px; border-radius: 10px; opacity: 0; transition: opacity 0.2s; white-space: nowrap; pointer-events: none; }
     .luffy-bubble.show { opacity: 1; }
 
@@ -218,23 +255,6 @@
 
     .luffy-hands-grip { position: absolute; bottom: 2px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; }
     .grip-hand { width: 10px; height: 6px; background: #fed7aa; border: 1px solid #1e293b; border-radius: 4px 4px 2px 2px; }
-
-    .dock-pill-container { width: 100%; display: flex; align-items: flex-end; background: #101726; border: 1.5px solid rgba(0, 240, 255, 0.4); border-radius: 24px; padding: 6px 8px 6px 14px; gap: 6px; z-index: 10; }
-    .dock-pill-container textarea {
-      flex: 1;
-      min-height: 24px;
-      max-height: 140px;
-      background: transparent;
-      border: none;
-      color: #fff;
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 1.02rem;
-      outline: none;
-      resize: none;
-      overflow-y: auto;
-      line-height: 1.4;
-      padding-top: 2px;
-    }
 
     .dock-btn-group { display: flex; align-items: center; gap: 4px; align-self: flex-end; }
 
@@ -349,7 +369,7 @@
           <div class="title-styled-text">GIBBON<span>//</span>MOKUTTAN LABS</div>
         </div>
 
-        <!-- TIMING SECTIONS MOVED TO TOP RIGHT CORNER & WARNING ICON PRESERVED -->
+        <!-- TIMING SECTIONS & WARNING ICON -->
         <div class="header-right-tools">
           <div class="time-stacked-box">
             <span class="date-row" id="liveDateRow">--</span>
@@ -374,57 +394,58 @@
     </div>
 
     <footer class="hud-footer">
-      <div class="luffy-dock-perch" id="luffyPerch" onclick="luffyTap()">
-        <div class="luffy-bubble" id="luffyBubble">Hooiii!</div>
-        
-        <svg class="luffy-svg-3d" viewBox="0 0 100 110">
-          <defs>
-            <radialGradient id="strawGrad" cx="50%" cy="30%" r="60%">
-              <stop offset="0%" stop-color="#fde047"/>
-              <stop offset="70%" stop-color="#eab308"/>
-              <stop offset="100%" stop-color="#ca8a04"/>
-            </radialGradient>
-            <radialGradient id="faceGrad" cx="45%" cy="40%" r="55%">
-              <stop offset="0%" stop-color="#ffedd5"/>
-              <stop offset="85%" stop-color="#fed7aa"/>
-              <stop offset="100%" stop-color="#fdba74"/>
-            </radialGradient>
-            <linearGradient id="redVest" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#ef4444"/>
-              <stop offset="100%" stop-color="#b91c1c"/>
-            </linearGradient>
-          </defs>
-
-          <ellipse cx="50" cy="38" rx="46" ry="13" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
-          <path d="M16 38 Q50 33 84 38" stroke="#dc2626" stroke-width="5" fill="none"/>
-          <path d="M26 36 C28 12, 72 12, 74 36 Z" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
-          <path d="M26 35 Q50 31 74 35" stroke="#b91c1c" stroke-width="6" fill="none"/>
-          <path d="M23 44 Q14 54 24 64 Q18 68 28 74" fill="#090d16"/>
-          <path d="M77 44 Q86 54 76 64 Q82 68 72 74" fill="#090d16"/>
-          <circle cx="50" cy="58" r="25" fill="url(#faceGrad)" stroke="#1e293b" stroke-width="1.8"/>
-          <circle cx="24" cy="60" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
-          <circle cx="76" cy="60" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
-          <path d="M27 44 L33 54 L41 45 L50 56 L59 46 L67 55 L73 45 Z" fill="#090d16"/>
-          <ellipse cx="38" cy="56" rx="4" ry="5.2" fill="#090d16"/>
-          <ellipse cx="62" cy="56" rx="4" ry="5.2" fill="#090d16"/>
-          <circle cx="39.5" cy="54" r="1.5" fill="#ffffff"/>
-          <circle cx="63.5" cy="54" r="1.5" fill="#ffffff"/>
-          <path d="M33 64 L41 64 M35 62 L35 66 M39 62 L39 66" stroke="#1e293b" stroke-width="1.3" stroke-linecap="round"/>
-          <ellipse cx="32" cy="61" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
-          <ellipse cx="68" cy="61" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
-          <path d="M39 68 Q50 78 61 68 Z" fill="#ffffff" stroke="#090d16" stroke-width="1.8"/>
-          <path d="M43 71 Q50 74 57 71" stroke="#ef4444" stroke-width="1.2" fill="none"/>
-          <path d="M32 82 L68 82 L75 106 L25 106 Z" fill="url(#redVest)" stroke="#7f1d1d" stroke-width="1.8"/>
-          <path d="M43 82 L50 94 L57 82 Z" fill="#fed7aa"/>
-        </svg>
-
-        <div class="luffy-hands-grip">
-          <div class="grip-hand"></div>
-          <div class="grip-hand"></div>
-        </div>
-      </div>
-
       <div class="dock-pill-container">
+        <!-- LUFFY PERCH RIDES ON TOP OF THE EXPANDING DOCK -->
+        <div class="luffy-dock-perch" id="luffyPerch" onclick="luffyTap()">
+          <div class="luffy-bubble" id="luffyBubble">Hooiii!</div>
+          
+          <svg class="luffy-svg-3d" viewBox="0 0 100 110">
+            <defs>
+              <radialGradient id="strawGrad" cx="50%" cy="30%" r="60%">
+                <stop offset="0%" stop-color="#fde047"/>
+                <stop offset="70%" stop-color="#eab308"/>
+                <stop offset="100%" stop-color="#ca8a04"/>
+              </radialGradient>
+              <radialGradient id="faceGrad" cx="45%" cy="40%" r="55%">
+                <stop offset="0%" stop-color="#ffedd5"/>
+                <stop offset="85%" stop-color="#fed7aa"/>
+                <stop offset="100%" stop-color="#fdba74"/>
+              </radialGradient>
+              <linearGradient id="redVest" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ef4444"/>
+                <stop offset="100%" stop-color="#b91c1c"/>
+              </linearGradient>
+            </defs>
+
+            <ellipse cx="50" cy="38" rx="46" ry="13" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
+            <path d="M16 38 Q50 33 84 38" stroke="#dc2626" stroke-width="5" fill="none"/>
+            <path d="M26 36 C28 12, 72 12, 74 36 Z" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
+            <path d="M26 35 Q50 31 74 35" stroke="#b91c1c" stroke-width="6" fill="none"/>
+            <path d="M23 44 Q14 54 24 64 Q18 68 28 74" fill="#090d16"/>
+            <path d="M77 44 Q86 54 76 64 Q82 68 72 74" fill="#090d16"/>
+            <circle cx="50" cy="58" r="25" fill="url(#faceGrad)" stroke="#1e293b" stroke-width="1.8"/>
+            <circle cx="24" cy="60" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
+            <circle cx="76" cy="60" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
+            <path d="M27 44 L33 54 L41 45 L50 56 L59 46 L67 55 L73 45 Z" fill="#090d16"/>
+            <ellipse cx="38" cy="56" rx="4" ry="5.2" fill="#090d16"/>
+            <ellipse cx="62" cy="56" rx="4" ry="5.2" fill="#090d16"/>
+            <circle cx="39.5" cy="54" r="1.5" fill="#ffffff"/>
+            <circle cx="63.5" cy="54" r="1.5" fill="#ffffff"/>
+            <path d="M33 64 L41 64 M35 62 L35 66 M39 62 L39 66" stroke="#1e293b" stroke-width="1.3" stroke-linecap="round"/>
+            <ellipse cx="32" cy="61" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
+            <ellipse cx="68" cy="61" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
+            <path d="M39 68 Q50 78 61 68 Z" fill="#ffffff" stroke="#090d16" stroke-width="1.8"/>
+            <path d="M43 71 Q50 74 57 71" stroke="#ef4444" stroke-width="1.2" fill="none"/>
+            <path d="M32 82 L68 82 L75 106 L25 106 Z" fill="url(#redVest)" stroke="#7f1d1d" stroke-width="1.8"/>
+            <path d="M43 82 L50 94 L57 82 Z" fill="#fed7aa"/>
+          </svg>
+
+          <div class="luffy-hands-grip">
+            <div class="grip-hand"></div>
+            <div class="grip-hand"></div>
+          </div>
+        </div>
+
         <textarea id="hudInput" rows="1" placeholder="Type a message or use mic..."></textarea>
         
         <div class="dock-btn-group">
@@ -621,6 +642,7 @@
       stream.innerHTML = '';
 
       document.getElementById('hudInput').value = '';
+      document.getElementById('hudInput').style.height = 'auto';
       document.getElementById('hudInput').focus();
 
       renderThreadList(localThreads);
@@ -785,7 +807,7 @@
         .replace(/\n/g, '<br>');
     }
 
-    function escapeHtml(t) { return t.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'#'+m.charCodeAt(0)+';'})); }
+    function escapeHtml(t) { return t.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
     let tickerInterval;
     function startTicker() {
@@ -818,8 +840,11 @@
     }
 
     let typingTimer;
-    hudInput.addEventListener('input', () => {
-      if (hudInput.value.trim().length > 0) {
+    hudInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+
+      if (this.value.trim().length > 0) {
         setLuffyState('excited');
         triggerLuffyBubble("Hooiii!");
         clearTimeout(typingTimer);
@@ -850,6 +875,7 @@
       const val = hudInput.value.trim();
       if (!val) return;
       hudInput.value = '';
+      hudInput.style.height = 'auto';
 
       const now = new Date();
       const nowTs = new Intl.DateTimeFormat('en-GB', {
@@ -930,6 +956,8 @@
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         hudInput.value = transcript;
+        hudInput.style.height = 'auto';
+        hudInput.style.height = (hudInput.scrollHeight) + 'px';
         sendMessage();
       };
 
