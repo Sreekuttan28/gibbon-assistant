@@ -333,7 +333,8 @@ async def text_to_speech(text: str):
     clean_text = re.sub(r'[*#_`|~>—–-]', ' ', clean_text)
     clean_text = re.sub(r'\s+', ' ', clean_text).strip()[:4000]
 
-    candidate_voices = ["en-US-AvaNeural", "en-US-AriaNeural", "en-US-JennyNeural"]
+    # Updated to use Indian English (en-IN) neural voices
+    candidate_voices = ["en-IN-NeerjaNeural", "en-IN-PrabhatNeural"]
     audio_data = bytearray()
 
     for v in candidate_voices:
