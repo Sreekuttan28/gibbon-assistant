@@ -1,9 +1,10 @@
 fastapi
 uvicorn
+python-dotenv
 requests
 geopy
 duckduckgo_search
+beautifulsoup4
 google-genai
 groq
 edge-tts
-beautifulsoup4
