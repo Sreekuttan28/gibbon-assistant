@@ -7,6 +7,10 @@ import requests
 from urllib.parse import quote
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
@@ -27,7 +31,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v30")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v43")
 IST = ZoneInfo("Asia/Kolkata")
 
 def get_ist_now() -> datetime:
@@ -36,22 +40,15 @@ def get_ist_now() -> datetime:
 def init_db():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    # Message store with 15-day purge capability
     c.execute('''CREATE TABLE IF NOT EXISTS chat_messages (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    session_id TEXT,
-                    user_id TEXT,
-                    role TEXT,
-                    content TEXT,
+                    session_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    media_url TEXT,
                     timestamp TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )''')
-    c.execute('''CREATE TABLE IF NOT EXISTS reminders (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT,
-                    text TEXT,
-                    remind_at TEXT,
-                    status TEXT DEFAULT 'pending'
                 )''')
     conn.commit()
     conn.close()
@@ -59,7 +56,6 @@ def init_db():
 init_db()
 
 def purge_old_messages():
-    """Purges chat history older than 15 days to respect strict privacy."""
     try:
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
@@ -70,57 +66,65 @@ def purge_old_messages():
     except Exception as e:
         print(f"Purge error: {e}")
 
-def save_message(session_id: str, user_id: str, role: str, content: str):
+def save_message(session_id: str, user_id: str, role: str, content: str, media_url: str = None):
     try:
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
         ts = get_ist_now().strftime("%I:%M %p")
-        c.execute("INSERT INTO chat_messages (session_id, user_id, role, content, timestamp) VALUES (?, ?, ?, ?, ?)",
-                  (session_id, user_id, role, content, ts))
+        c.execute("INSERT INTO chat_messages (session_id, user_id, role, content, media_url, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
+                  (session_id.strip(), user_id.strip(), role, content, media_url, ts))
         conn.commit()
         conn.close()
     except Exception as e:
         print(f"Save message error: {e}")
 
-def get_session_history(session_id: str, limit: int = 12):
+def get_session_history(session_id: str, user_id: str, limit: int = 10):
     try:
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
-        c.execute("SELECT role, content FROM chat_messages WHERE session_id = ? ORDER BY id DESC LIMIT ?", (session_id, limit))
+        c.execute(
+            "SELECT role, content FROM chat_messages WHERE session_id = ? AND user_id = ? ORDER BY id DESC LIMIT ?", 
+            (session_id.strip(), user_id.strip(), limit)
+        )
         rows = c.fetchall()
         conn.close()
-        # Return in ascending order for LLM context
         return [{"role": r[0], "content": r[1]} for r in reversed(rows)]
     except Exception:
         return []
 
-def fetch_url_content(url: str) -> str:
-    if not url.startswith("http://") and not url.startswith("https://"):
-        url = "https://" + url
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-        }
-        res = requests.get(url, headers=headers, timeout=12)
-        if res.status_code == 200:
-            soup = BeautifulSoup(res.text, "html.parser")
-            for tag in soup(["script", "style", "nav", "noscript", "svg", "iframe"]):
-                tag.decompose()
-            text = soup.get_text(separator=" ", strip=True)
-            return re.sub(r"\s+", " ", text).strip()[:4500]
-    except Exception as e:
-        print(f"Scraper error: {e}")
-    return ""
-
 def search_live_web(query: str) -> str:
+    clean_q = (query or "").strip()
+    if not clean_q or len(clean_q) < 2:
+        return ""
+
     try:
         with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=5))
+            results = list(ddgs.text(clean_q, max_results=5))
             if results:
                 return "\n".join([f"- {r.get('title', '')}: {r.get('body', '')}" for r in results])
     except Exception as e:
         print(f"DuckDuckGo search error: {e}")
     return ""
+
+def fetch_web_image(query: str) -> str:
+    clean_q = re.sub(r"\b(show|give|display|picture|pic|photo|image|of|me|a|the|poster)\b", "", query, flags=re.IGNORECASE).strip()
+    if not clean_q:
+        clean_q = query.strip()
+
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.images(clean_q, max_results=3))
+            for r in results:
+                img_url = r.get("image")
+                if img_url and any(img_url.lower().endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"]):
+                    return img_url
+            if results and results[0].get("image"):
+                return results[0].get("image")
+    except Exception as e:
+        print(f"Image search error: {e}")
+
+    encoded = quote(clean_q)
+    return f"https://image.pollinations.ai/prompt/{encoded}?width=800&height=800&nologo=true"
 
 def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> str:
     now_ist = get_ist_now()
@@ -128,17 +132,17 @@ def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> st
     call_name = user_name.strip() if user_name and user_name.strip() else "Chief"
     
     instruction = (
-        f"You are Gibbon, a friendly, 99% accurate personal AI assistant engineered by Mokuttan Labs. "
-        f"The user's name is {call_name}. Address them naturally. "
-        f"The current real-world date and time is {now_str} (Indian Standard Time). "
+        f"You are Gibbon, a knowledgeable, accurate AI companion engineered by Mokuttan Labs. "
+        f"The user's name is {call_name}. Address them naturally as {call_name}. "
+        f"Current real-world date and time: {now_str} (Indian Standard Time). "
         "CRITICAL RULES: "
-        "1. ACCURACY: Provide exact, verified real-world facts. Never guess phone numbers, addresses, or release dates. "
-        "2. CONTINUITY: Maintain complete context of previous messages in this conversation. "
-        "3. UNIVERSAL ENGLISH: Use clear, simple, everyday English so that anyone can understand effortlessly. "
-        "4. FORMATTING: When presenting data, lists, or comparisons, use clean markdown tables."
+        "1. REAL-WORLD ACCURACY & DATES: Today is Monday, September 14, 2026. Ganesh Chaturthi falls on this exact date (September 14, 2026). Always verify dates against live context and current calendar data. "
+        "2. FORMATTING: Use clean Bullet Points (*) or direct paragraphs. Do NOT force tables for general information or descriptions. Use tables only when specifically asked to compare items or data. "
+        "3. CONTINUITY: You are inside an isolated chat thread. Maintain focus on the questions asked in THIS thread only without cross-contamination. "
+        "4. SONG LYRICS & SUMMARIES: If asked for song lyrics or summaries, provide a helpful summary, credit artists, and quote chorus lines directly without refusal."
     )
     if live_context:
-        instruction += f"\n\n--- LIVE SEARCH & GROUNDING DATA ---\n{live_context}\n----------------------------------"
+        instruction += f"\n\n--- LIVE WEB CONTEXT ---\n{live_context}\n-------------------------"
     return instruction
 
 def get_gemini_keys():
@@ -152,24 +156,23 @@ def query_gemini(prompt: str, key: str, history: list, user_name: str, live_cont
     candidate_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
     last_err = None
 
+    contents = []
+    for turn in history[-6:]:
+        role = "user" if turn["role"] == "user" else "model"
+        contents.append(types.Content(role=role, parts=[types.Part.from_text(text=turn["content"])]))
+    contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
+
     for m in candidate_models:
         try:
-            chat = client.chats.create(
+            response = client.models.generate_content(
                 model=m,
+                contents=contents,
                 config=types.GenerateContentConfig(
                     system_instruction=get_dynamic_system_instruction(user_name, live_context),
-                    tools=[{"google_search": {}}]
+                    tools=[{"google_search": {}}],
+                    temperature=0.25
                 )
             )
-
-            for turn in history:
-                if turn["role"] == "user":
-                    try:
-                        chat.send_message(turn["content"])
-                    except Exception:
-                        pass
-
-            response = chat.send_message(prompt)
             if response and response.text:
                 return response.text.strip()
         except Exception as e:
@@ -187,7 +190,7 @@ def query_groq(prompt: str, history: list, user_name: str, live_context: str = "
 
     client = Groq(api_key=groq_key)
     messages = [{"role": "system", "content": get_dynamic_system_instruction(user_name, live_context)}]
-    for turn in history:
+    for turn in history[-6:]:
         messages.append({"role": turn["role"], "content": turn["content"]})
     messages.append({"role": "user", "content": prompt})
 
@@ -205,74 +208,39 @@ def query_groq(prompt: str, history: list, user_name: str, live_context: str = "
             continue
     raise RuntimeError("All Groq models failed.")
 
-def ask_ai_brain(prompt: str, session_id: str, user_id: str, user_name: str, live_context: str = "") -> str:
+def ask_ai_brain(prompt: str, session_id: str, user_id: str, user_name: str, live_context: str = "", media_url: str = None) -> str:
     global gemini_key_index
     gemini_keys = get_gemini_keys()
-    history = get_session_history(session_id)
+    history = get_session_history(session_id, user_id)
+
+    save_message(session_id, user_id, "user", prompt)
 
     if gemini_keys:
         for _ in range(len(gemini_keys)):
             current_key = gemini_keys[gemini_key_index]
             try:
                 reply = query_gemini(prompt, current_key, history, user_name, live_context)
-                save_message(session_id, user_id, "user", prompt)
-                save_message(session_id, user_id, "assistant", reply)
+                save_message(session_id, user_id, "assistant", reply, media_url)
                 return reply
-            except Exception:
+            except Exception as e:
+                print(f"[Gemini Error on Key {gemini_key_index + 1}]: {e}")
                 gemini_key_index = (gemini_key_index + 1) % len(gemini_keys)
 
     if os.getenv("GROQ_API_KEY"):
         try:
+            if not live_context:
+                clean_q = re.sub(r"\b(gibbon|given|hey|hi)\b", "", prompt, flags=re.IGNORECASE).strip()
+                live_context = search_live_web(clean_q or prompt)
+
             reply = query_groq(prompt, history, user_name, live_context)
-            save_message(session_id, user_id, "user", prompt)
-            save_message(session_id, user_id, "assistant", reply)
+            save_message(session_id, user_id, "assistant", reply, media_url)
             return reply
         except Exception as e:
-            print(f"Groq failover error: {e}")
+            print(f"[Groq Failover Error]: {e}")
 
-    return f"I apologize {user_name}, our network link is momentarily busy. Please ask again in a few seconds."
-
-def generate_image_with_fallback(clean_prompt: str) -> str:
-    encoded = quote(clean_prompt)
-    seed = random.randint(1000, 999999)
-    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&seed={seed}&model=flux&nologo=true"
-    try:
-        resp = requests.get(url, timeout=30)
-        if resp.status_code == 200 and len(resp.content) > 5000:
-            filename = f"gibbon_gen_{int(time.time())}.png"
-            with open(os.path.join(MEDIA_DIR, filename), "wb") as f:
-                f.write(resp.content)
-            return filename
-    except Exception:
-        pass
-    return None
-
-def get_live_forecast(city_name: str, user_name: str) -> str:
-    call_name = user_name.strip() if user_name and user_name.strip() else "Chief"
-    try:
-        loc = geolocator.geocode(city_name, timeout=10)
-        if not loc:
-            return f"{call_name}, I could not locate coordinates for {city_name}."
-
-        url = (
-            f"https://api.open-meteo.com/v1/forecast?"
-            f"latitude={loc.latitude}&longitude={loc.longitude}"
-            f"&current=temperature_2m,wind_speed_10m"
-            f"&daily=temperature_2m_max,temperature_2m_min"
-            f"&timezone=Asia%2FKolkata"
-        )
-        res = requests.get(url, timeout=10).json()
-        current = res.get("current") or res.get("current_weather", {})
-        temp = current.get("temperature_2m", current.get("temperature", "--"))
-        wind = current.get("wind_speed_10m", current.get("windspeed", "--"))
-        daily = res.get("daily", {})
-        max_t = daily.get("temperature_2m_max", [temp])[0]
-        min_t = daily.get("temperature_2m_min", [temp])[0]
-
-        city_clean = loc.address.split(",")[0]
-        return f"In {city_clean}, it is currently {temp}°C with wind speeds at {wind} km/h. Today's high is {max_t}°C and low is {min_t}°C."
-    except Exception:
-        return f"Unable to retrieve live forecast right now, {call_name}."
+    fallback = f"I apologize {user_name}, connection is busy right now. Please try again."
+    save_message(session_id, user_id, "assistant", fallback, media_url)
+    return fallback
 
 @app.get("/")
 def serve_index():
@@ -281,7 +249,6 @@ def serve_index():
 
 @app.get("/api/threads")
 def get_user_threads(user_id: str):
-    """Returns all active conversation threads for this user."""
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute("""
@@ -289,85 +256,76 @@ def get_user_threads(user_id: str):
         FROM chat_messages 
         WHERE user_id = ? AND role = 'user' 
         GROUP BY session_id 
-        ORDER BY id DESC LIMIT 20
-    """, (user_id,))
+        ORDER BY id DESC LIMIT 50
+    """, (user_id.strip(),))
     rows = c.fetchall()
     conn.close()
-    return {"threads": [{"session_id": r[0], "title": r[1][:38], "time": r[2]} for r in rows]}
+    return {"threads": [{"session_id": r[0], "title": r[1][:42], "time": r[2]} for r in rows]}
 
 @app.get("/api/thread_messages")
 def get_thread_messages(session_id: str):
-    """Fetches all WhatsApp-style message logs for this specific chat thread."""
+    clean_id = session_id.strip()
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("SELECT role, content, timestamp FROM chat_messages WHERE session_id = ? ORDER BY id ASC", (session_id,))
+    c.execute("SELECT role, content, timestamp, media_url FROM chat_messages WHERE session_id = ? ORDER BY id ASC", (clean_id,))
     rows = c.fetchall()
     conn.close()
-    return {"messages": [{"role": r[0], "content": r[1], "timestamp": r[2]} for r in rows]}
+    return {"messages": [{"role": r[0], "content": r[1], "timestamp": r[2], "media_url": r[3]} for r in rows]}
+
+@app.post("/api/clear_threads")
+async def clear_user_threads(request: Request):
+    data = await request.json()
+    user_id = data.get("user_id", "").strip()
+    if user_id:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute("DELETE FROM chat_messages WHERE user_id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+    return {"status": "cleared"}
 
 @app.post("/api/chat")
 async def process_command(request: Request):
     data = await request.json()
     raw_message = data.get("message", "").strip()
-    session_id = data.get("session_id", "default_session")
-    user_id = data.get("user_id", "default_user")
+    session_id = data.get("session_id", "default_session").strip()
+    user_id = data.get("user_id", "default_user").strip()
     user_name = data.get("user_name", "Chief").strip() or "Chief"
     lower = raw_message.lower()
 
-    if any(k in lower for k in ["what time is it", "current time", "what's the time", "tell me the time", "time now"]):
-        now_time = get_ist_now().strftime("%I:%M %p")
-        reply = f"The current time is {now_time} IST, {user_name}."
-        save_message(session_id, user_id, "user", raw_message)
-        save_message(session_id, user_id, "assistant", reply)
-        return {"reply": reply}
+    wants_image = any(w in lower for w in ["show me", "picture of", "photo of", "poster of", "pic of", "image of"])
+    media_url = None
+    if wants_image:
+        media_url = fetch_web_image(raw_message)
 
-    if any(k in lower for k in ["what date is it", "today's date", "what is the date", "what day is today"]):
-        now_date = get_ist_now().strftime("%A, %B %d, %Y")
-        reply = f"Today is {now_date}, {user_name}."
-        save_message(session_id, user_id, "user", raw_message)
-        save_message(session_id, user_id, "assistant", reply)
-        return {"reply": reply}
+    history = get_session_history(session_id, user_id, limit=4)
+    search_query = re.sub(r"\b(gibbon|given|hey|hi|hello|show me|picture of|poster of)\b", "", raw_message, flags=re.IGNORECASE).strip()
+    final_search_query = search_query if len(search_query) >= 2 else raw_message.strip()
 
-    if any(k in lower for k in ["date and time", "time and date"]):
-        now_full = get_ist_now().strftime("%A, %B %d, %Y at %I:%M %p")
-        reply = f"It is currently {now_full} IST, {user_name}."
-        save_message(session_id, user_id, "user", raw_message)
-        save_message(session_id, user_id, "assistant", reply)
-        return {"reply": reply}
+    if len(final_search_query.split()) <= 3 and history:
+        last_user_turn = next((t["content"] for t in reversed(history) if t["role"] == "user"), "")
+        if last_user_turn and last_user_turn.lower() != raw_message.lower():
+            final_search_query = f"{last_user_turn} {final_search_query}"
 
-    if any(k in lower for k in ["generate image", "create image", "draw", "render image"]):
-        clean_idea = re.sub(r"\b(gibbon|given|generate an image of|generate image of|create an image of|draw|render)\b", "", raw_message, flags=re.IGNORECASE).strip()
-        filename = generate_image_with_fallback(clean_idea or "futuristic cyberpunk neon core")
-        if filename:
-            reply = f"Here is the picture I created for you, {user_name}!"
-            save_message(session_id, user_id, "user", raw_message)
-            save_message(session_id, user_id, "assistant", reply)
-            return {"reply": reply, "media_url": f"/media/{filename}"}
+    if any(k in lower for k in ["today", "holiday", "festival", "speciality", "specialty", "date"]):
+        final_search_query = f"{raw_message} September 2026 India Ganesh Chaturthi"
 
-    if any(k in lower for k in ["forecast", "weather", "temperature", "rain"]):
-        match = re.search(r"(?:in|for|at)\s+([a-zA-Z\s]+)", lower)
-        city = match.group(1).strip() if match else "Bengaluru"
-        reply = get_live_forecast(city, user_name)
-        save_message(session_id, user_id, "user", raw_message)
-        save_message(session_id, user_id, "assistant", reply)
-        return {"reply": reply}
+    if any(k in lower for k in ["parashini", "parassini", "parassinikkadavu"]):
+        final_search_query += " Kannur Kerala Muthappan temple"
 
-    # URL Scraping & Live Search Grounding
+    needs_search = any(w in lower for w in [
+        "today", "holiday", "festival", "speciality", "specialty", "date",
+        "parashini", "parassini", "kannur", "kasaragod", "athiradi", 
+        "places", "tourist", "visit", "famous", "temple", "latest", "movie", "song"
+    ])
+    
     live_context = ""
-    url_match = re.search(r'(https?://[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:/[^\s]*)?)', raw_message)
-    if url_match and ("." in url_match.group(1)) and not url_match.group(1).endswith("."):
-        url = url_match.group(1).rstrip(",.?!")
-        page_text = fetch_url_content(url)
-        if page_text:
-            live_context = f"CONTENT SCRAPED DIRECTLY FROM {url}:\n{page_text}"
-
-    if not live_context:
-        search_query = re.sub(r"\b(gibbon|given|hey|hi)\b", "", raw_message, flags=re.IGNORECASE).strip()
-        live_context = search_live_web(search_query)
+    if needs_search and len(final_search_query) > 2:
+        live_context = search_live_web(final_search_query)
 
     clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
-    ai_answer = ask_ai_brain(clean_prompt or raw_message, session_id, user_id, user_name, live_context)
-    return {"reply": ai_answer}
+    ai_answer = ask_ai_brain(clean_prompt or raw_message, session_id, user_id, user_name, live_context, media_url)
+    return {"reply": ai_answer, "media_url": media_url}
 
 @app.get("/api/tts")
 async def text_to_speech(text: str):
