@@ -100,8 +100,8 @@
     }
 
     .brand-avatar {
-      width: 50px;
-      height: 50px;
+      width: 52px;
+      height: 52px;
       border-radius: 12px;
       border: 2px solid var(--primary);
       box-shadow: 0 0 16px var(--primary-glow);
@@ -536,23 +536,23 @@
       margin-top: 4px;
       background: rgba(10, 18, 36, 0.75);
       border: 1px solid rgba(0, 240, 255, 0.4);
-      padding: 6px 16px;
+      padding: 6px 18px;
       border-radius: 30px;
       box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15);
     }
 
     .header-logo-badge {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       border: 1.5px solid var(--primary);
       background: radial-gradient(circle, #0e1e38 0%, #040914 100%);
-      box-shadow: 0 0 14px var(--primary-glow);
+      box-shadow: 0 0 12px var(--primary-glow);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      padding: 4px;
+      padding: 3px;
     }
 
     .header-logo-badge img {
@@ -592,193 +592,11 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       flex: 1;
       min-height: 0;
       justify-content: flex-start;
-      padding-top: 4px;
-    }
-
-    .mascot-stage {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 24px;
-      margin-bottom: 2px;
-      flex-shrink: 0;
-      position: relative;
-      z-index: 20;
-    }
-
-    .reactor-podium {
-      position: relative;
-      width: 84px;
-      height: 84px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .reactor-ring-outer {
-      position: absolute;
-      inset: -5px;
-      border-radius: 50%;
-      border: 2px dashed var(--primary);
-      opacity: 0.75;
-      animation: spinClockwise 12s linear infinite;
-    }
-
-    .reactor-ring-inner {
-      position: absolute;
-      inset: 2px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(255, 0, 85, 0.45);
-      border-top-color: var(--accent);
-      animation: spinCounter 6s linear infinite;
-    }
-
-    .reactor-core-logo {
-      width: 68px;
-      height: 68px;
-      border-radius: 18px;
-      border: 2.5px solid var(--primary);
-      background: radial-gradient(circle, #0e203c 0%, #030814 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 22px var(--primary-glow);
-      overflow: hidden;
-      padding: 5px;
-      z-index: 2;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .reactor-core-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.65)) brightness(1.2) contrast(1.15);
-    }
-
-    .reactor-core-logo span {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1rem;
-      font-weight: 900;
-      color: var(--primary);
-    }
-
-    .reactor-podium.active .reactor-core-logo {
-      transform: scale(1.08);
-      box-shadow: 0 0 28px var(--accent-glow), 0 0 32px var(--primary-glow);
-    }
-
-    .reactor-podium.active .reactor-ring-outer {
-      border-color: var(--accent);
-      animation-duration: 4s;
-    }
-
-    .luffy-widget {
-      position: relative;
-      width: 76px;
-      height: 90px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      user-select: none;
-    }
-
-    .luffy-widget:hover {
-      transform: scale(1.08) translateY(-3px);
-    }
-
-    .luffy-bubble {
-      position: absolute;
-      top: -24px;
-      background: #ffffff;
-      color: #030712;
-      font-weight: 800;
-      font-size: 0.66rem;
-      padding: 3px 8px;
-      border-radius: 12px;
-      border: 1.5px solid #030712;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
-      white-space: nowrap;
-      opacity: 0;
-      transform: translateY(4px);
-      transition: all 0.2s ease;
-      pointer-events: none;
-      z-index: 30;
-    }
-
-    .luffy-bubble::after {
-      content: "";
-      position: absolute;
-      bottom: -4px;
-      left: 50%;
-      transform: translateX(-50%);
-      border-width: 4px 4px 0;
-      border-style: solid;
-      border-color: #ffffff transparent;
-      display: block;
-      width: 0;
-    }
-
-    .luffy-bubble.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .luffy-svg {
-      width: 100%;
-      height: 100%;
-      filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.7));
-      transform-origin: bottom center;
-      animation: luffyIdleBreathing 3.6s ease-in-out infinite;
-    }
-
-    .luffy-widget.curious .luffy-svg {
-      animation: luffyCuriousTilt 0.8s ease-in-out infinite alternate !important;
-    }
-
-    .luffy-widget.thinking .luffy-svg {
-      animation: luffyConcentrating 1.1s ease-in-out infinite alternate !important;
-    }
-
-    .luffy-widget.focused .luffy-svg {
-      animation: luffyJoyfulBounce 0.5s ease-in-out infinite alternate !important;
-    }
-
-    @keyframes luffyIdleBreathing {
-      0%, 100% { transform: translateY(0) scale(1, 1); }
-      50% { transform: translateY(-4px) scale(1.02, 0.98); }
-    }
-
-    @keyframes luffyCuriousTilt {
-      0% { transform: rotate(-7deg) translateY(-3px); }
-      100% { transform: rotate(7deg) translateY(-5px); }
-    }
-
-    @keyframes luffyConcentrating {
-      0% { transform: translateY(-2px) rotate(-3deg); }
-      50% { transform: translateY(-7px) rotate(3deg); }
-      100% { transform: translateY(-4px) rotate(-2deg); }
-    }
-
-    @keyframes luffyJoyfulBounce {
-      0% { transform: translateY(0) scale(1, 1); }
-      100% { transform: translateY(-8px) scale(1.06, 0.94); }
-    }
-
-    @keyframes spinClockwise {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    @keyframes spinCounter {
-      from { transform: rotate(360deg); }
-      to { transform: rotate(0deg); }
+      padding-top: 6px;
     }
 
     .user-question-card {
@@ -854,12 +672,12 @@
       backdrop-filter: blur(14px);
       border: 1px solid var(--panel-border);
       border-radius: 14px;
-      padding: 12px 14px;
+      padding: 14px 16px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.6);
       display: flex;
       flex-direction: column;
       flex: 1;
-      min-height: 100px;
+      min-height: 120px;
       position: relative;
       overflow: hidden;
     }
@@ -885,7 +703,7 @@
 
     .log-content {
       font-size: 0.98rem;
-      line-height: 1.5;
+      line-height: 1.55;
       color: #f1f5f9;
       overflow-y: auto;
       flex: 1;
@@ -901,7 +719,6 @@
       border-radius: 4px;
     }
 
-    /* CYBER HUD TABLE STYLING */
     .table-container {
       width: 100%;
       overflow-x: auto;
@@ -1022,7 +839,7 @@
       width: 100%;
       flex-shrink: 0;
       margin-top: auto;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
     .chip {
@@ -1047,6 +864,7 @@
       color: var(--primary);
     }
 
+    /* FOOTER & DOCK WITH LUFFY HOLDING THE BOX */
     .hud-footer {
       width: 100%;
       max-width: 680px;
@@ -1054,8 +872,116 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
+      position: relative;
       flex-shrink: 0;
+      padding-top: 36px; /* Space for Luffy peering over top edge */
+    }
+
+    /* 3D LUFFY ANCHORED DIRECTLY ON TOP OF ACTION BUTTONS */
+    .luffy-dock-perch {
+      position: absolute;
+      top: -24px;
+      right: 42px;
+      width: 68px;
+      height: 70px;
+      z-index: 15;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .luffy-dock-perch:hover {
+      transform: translateY(-4px) scale(1.08);
+    }
+
+    .luffy-bubble {
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background: #ffffff;
+      color: #030712;
+      font-weight: 800;
+      font-size: 0.68rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1.5px solid #030712;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55);
+      white-space: nowrap;
+      opacity: 0;
+      transition: all 0.2s ease;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    .luffy-bubble::after {
+      content: "";
+      position: absolute;
+      bottom: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 4px 4px 0;
+      border-style: solid;
+      border-color: #ffffff transparent;
+      display: block;
+      width: 0;
+    }
+
+    .luffy-bubble.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .luffy-svg-3d {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.7));
+      animation: luffyBreathing 3.6s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+
+    /* Excited typing animation */
+    .luffy-dock-perch.excited .luffy-svg-3d {
+      animation: luffyWaveHooii 0.6s ease-in-out infinite alternate !important;
+    }
+
+    .luffy-dock-perch.speaking .luffy-svg-3d {
+      animation: luffySpeakingBounce 0.5s ease-in-out infinite alternate !important;
+    }
+
+    @keyframes luffyBreathing {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-2.5px); }
+    }
+
+    @keyframes luffyWaveHooii {
+      0% { transform: translateY(-3px) rotate(-3deg); }
+      100% { transform: translateY(-7px) rotate(4deg) scale(1.04); }
+    }
+
+    @keyframes luffySpeakingBounce {
+      0% { transform: translateY(0) scale(1, 1); }
+      100% { transform: translateY(-6px) scale(1.05, 0.95); }
+    }
+
+    /* The gripping paws on top border */
+    .luffy-hands-grip {
+      position: absolute;
+      bottom: 2px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .grip-hand {
+      width: 12px;
+      height: 8px;
+      background: #fed7aa;
+      border: 1.5px solid #1e293b;
+      border-radius: 5px 5px 2px 2px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
     }
 
     .dock-pill-container {
@@ -1063,13 +989,14 @@
       display: flex;
       align-items: flex-end;
       background: #101726;
-      border: 1px solid rgba(0, 240, 255, 0.38);
+      border: 1.5px solid rgba(0, 240, 255, 0.4);
       border-radius: 24px;
       padding: 6px 8px 6px 14px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
       gap: 6px;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
+      z-index: 10;
     }
 
     .dock-pill-container.maximized {
@@ -1110,14 +1037,6 @@
     .dock-pill-container textarea::placeholder {
       color: #64748b;
       font-size: 0.92rem;
-    }
-
-    .dock-pill-container textarea::-webkit-scrollbar {
-      width: 3px;
-    }
-    .dock-pill-container textarea::-webkit-scrollbar-thumb {
-      background: var(--primary);
-      border-radius: 2px;
     }
 
     .dock-btn-group {
@@ -1205,7 +1124,7 @@
       color: #64748b;
       letter-spacing: 0.6px;
       text-align: center;
-      padding-bottom: 2px;
+      padding: 4px 0 2px;
       user-select: none;
     }
 
@@ -1238,6 +1157,7 @@
 
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
+  <!-- Settings & Profile Modal -->
   <div class="modal-overlay" id="settingsModal">
     <div class="settings-card">
       <div class="settings-title">
@@ -1270,6 +1190,7 @@
     </div>
   </div>
 
+  <!-- Left Sidebar Drawer: Sole Host for Full Logo -->
   <aside class="hud-sidebar" id="hudSidebar">
     <div class="brand-box">
       <div class="brand-left">
@@ -1279,7 +1200,7 @@
         </div>
         <div class="brand-meta">
           <h2>MOKUTTAN LABS</h2>
-          <span>GIBBON NEURAL CORE V3.1</span>
+          <span>GIBBON NEURAL CORE V3.2</span>
         </div>
       </div>
       <button class="close-sidebar-btn" id="closeSidebarBtn" aria-label="Close Drawer">✕</button>
@@ -1310,6 +1231,7 @@
   </aside>
 
   <div class="hud-viewport">
+    <!-- Top Header -->
     <header>
       <div class="hud-header-bar">
         <button class="sidebar-toggle-btn" id="sidebarToggleBtn">☰ CHATS</button>
@@ -1332,54 +1254,8 @@
       </div>
     </header>
 
+    <!-- Main Chat Workspace (Clean, Uncluttered & Expandable) -->
     <main>
-      <div class="mascot-stage">
-        <div class="reactor-podium" id="reactorPodium">
-          <div class="reactor-ring-outer"></div>
-          <div class="reactor-ring-inner"></div>
-          <div class="reactor-core-logo">
-            <img src="/static/logo.png" alt="Mokuttan Labs Emblem" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            <span style="display:none;">ML</span>
-          </div>
-        </div>
-
-        <div class="luffy-widget" id="luffyWidget" title="Tap Kid Luffy!">
-          <div class="luffy-bubble" id="luffyBubble">Shishishi!</div>
-          
-          <svg class="luffy-svg" viewBox="0 0 100 120">
-            <ellipse cx="50" cy="40" rx="46" ry="14" fill="#eab308" stroke="#854d0e" stroke-width="2.5"/>
-            <path d="M18 39 Q50 34 82 39" stroke="#b91c1c" stroke-width="4.5" fill="none"/>
-            <path d="M26 38 C28 14, 72 14, 74 38 Z" fill="#facc15" stroke="#854d0e" stroke-width="2"/>
-            <path d="M26 36 Q50 33 74 36" stroke="#dc2626" stroke-width="5.5" fill="none"/>
-
-            <path d="M24 46 Q16 56 26 66 Q20 70 30 76" fill="#0f172a"/>
-            <path d="M76 46 Q84 56 74 66 Q80 70 70 76" fill="#0f172a"/>
-
-            <circle cx="50" cy="62" r="26" fill="#fed7aa" stroke="#1e293b" stroke-width="2"/>
-            <circle cx="23" cy="64" r="5" fill="#fbcfe8" stroke="#1e293b" stroke-width="1.6"/>
-            <circle cx="77" cy="64" r="5" fill="#fbcfe8" stroke="#1e293b" stroke-width="1.6"/>
-
-            <path d="M28 46 L34 56 L42 47 L50 58 L58 48 L66 57 L72 47 Z" fill="#090d16"/>
-
-            <ellipse cx="38" cy="60" rx="3.6" ry="4.8" fill="#090d16"/>
-            <ellipse cx="62" cy="60" rx="3.6" ry="4.8" fill="#090d16"/>
-            <circle cx="39.5" cy="58.2" r="1.3" fill="#ffffff"/>
-            <circle cx="63.5" cy="58.2" r="1.3" fill="#ffffff"/>
-
-            <path d="M34 68 L42 68 M36 66 L36 70 M40 66 L40 70" stroke="#1e293b" stroke-width="1.3" stroke-linecap="round"/>
-
-            <ellipse cx="32" cy="65" rx="3.8" ry="2.2" fill="#f43f5e" opacity="0.65"/>
-            <ellipse cx="68" cy="65" rx="3.8" ry="2.2" fill="#f43f5e" opacity="0.65"/>
-
-            <path d="M40 72 Q50 82 60 72 Z" fill="#ffffff" stroke="#090d16" stroke-width="1.8"/>
-            <path d="M44 75 Q50 78 56 75" stroke="#ef4444" stroke-width="1.3" fill="none"/>
-
-            <path d="M34 88 L66 88 L72 115 L28 115 Z" fill="#ef4444" stroke="#991b1b" stroke-width="2"/>
-            <path d="M43 88 L50 102 L57 88 Z" fill="#fed7aa"/>
-          </svg>
-        </div>
-      </div>
-
       <div class="user-question-card" id="userQuestionCard">
         <div class="question-header" id="questionHeader" onclick="toggleQuestionExpand()">
           <div class="question-badge">
@@ -1417,7 +1293,89 @@
       </div>
     </main>
 
+    <!-- Footer Dock with Luffy Holding the Box -->
     <footer class="hud-footer">
+      <!-- 3D Luffy Perched & Gripping the Chat Box Above Buttons -->
+      <div class="luffy-dock-perch" id="luffyPerch" title="Tap Luffy!">
+        <div class="luffy-bubble" id="luffyBubble">Hooiii!</div>
+        
+        <!-- High-Detail 3D Layered Luffy SVG -->
+        <svg class="luffy-svg-3d" viewBox="0 0 100 110">
+          <defs>
+            <radialGradient id="strawGrad" cx="50%" cy="30%" r="60%">
+              <stop offset="0%" stop-color="#fde047"/>
+              <stop offset="70%" stop-color="#eab308"/>
+              <stop offset="100%" stop-color="#ca8a04"/>
+            </radialGradient>
+            <radialGradient id="faceGrad" cx="45%" cy="40%" r="55%">
+              <stop offset="0%" stop-color="#ffedd5"/>
+              <stop offset="85%" stop-color="#fed7aa"/>
+              <stop offset="100%" stop-color="#fdba74"/>
+            </radialGradient>
+            <linearGradient id="redVest" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#ef4444"/>
+              <stop offset="100%" stop-color="#b91c1c"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Straw Hat Wide Brim -->
+          <ellipse cx="50" cy="38" rx="46" ry="13" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
+          <path d="M16 38 Q50 33 84 38" stroke="#dc2626" stroke-width="5" fill="none"/>
+
+          <!-- Straw Hat Crown with Shadow -->
+          <path d="M26 36 C28 12, 72 12, 74 36 Z" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
+          <path d="M26 35 Q50 31 74 35" stroke="#b91c1c" stroke-width="6" fill="none"/>
+
+          <!-- Wild Spiky Black Hair -->
+          <path d="M23 44 Q14 54 24 64 Q18 68 28 74" fill="#090d16"/>
+          <path d="M77 44 Q86 54 76 64 Q82 68 72 74" fill="#090d16"/>
+
+          <!-- 3D Shaded Kid Face -->
+          <circle cx="50" cy="58" r="25" fill="url(#faceGrad)" stroke="#1e293b" stroke-width="1.8"/>
+
+          <!-- Ears -->
+          <circle cx="24" cy="60" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
+          <circle cx="76" cy="60" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
+
+          <!-- Front Hair Strands -->
+          <path d="M27 44 L33 54 L41 45 L50 56 L59 46 L67 55 L73 45 Z" fill="#090d16"/>
+
+          <!-- Expressive Eyes with Highlights -->
+          <ellipse cx="38" cy="56" rx="4" ry="5.2" fill="#090d16"/>
+          <ellipse cx="62" cy="56" rx="4" ry="5.2" fill="#090d16"/>
+          <circle cx="39.5" cy="54" r="1.5" fill="#ffffff"/>
+          <circle cx="63.5" cy="54" r="1.5" fill="#ffffff"/>
+
+          <!-- Left Eye Stitched Scar -->
+          <path d="M33 64 L41 64 M35 62 L35 66 M39 62 L39 66" stroke="#1e293b" stroke-width="1.3" stroke-linecap="round"/>
+
+          <!-- Cheerful Blush -->
+          <ellipse cx="32" cy="61" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
+          <ellipse cx="68" cy="61" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
+
+          <!-- Signature Happy Grin -->
+          <path d="M39 68 Q50 78 61 68 Z" fill="#ffffff" stroke="#090d16" stroke-width="1.8"/>
+          <path d="M43 71 Q50 74 57 71" stroke="#ef4444" stroke-width="1.2" fill="none"/>
+
+          <!-- Red Vest Shoulders (peeking over box) -->
+          <path d="M32 82 L68 82 L75 106 L25 106 Z" fill="url(#redVest)" stroke="#7f1d1d" stroke-width="1.8"/>
+          <path d="M43 82 L50 94 L57 82 Z" fill="#fed7aa"/>
+
+          <!-- Animated Waving Right Hand -->
+          <g id="luffyWaveArm">
+            <circle cx="82" cy="46" r="6" fill="#fed7aa" stroke="#1e293b" stroke-width="1.5"/>
+            <path d="M78 48 L88 38 L84 46" stroke="#1e293b" stroke-width="1.5" fill="#fed7aa"/>
+          </g>
+        </svg>
+
+        <!-- Gripping Paws Rested on Chat Box Edge -->
+        <div class="luffy-hands-grip">
+          <div class="grip-hand"></div>
+          <div class="grip-hand"></div>
+        </div>
+      </div>
+
+      <!-- Main Input Dock Pill -->
       <div class="dock-pill-container" id="dockContainer">
         <button class="icon-action-btn" id="expandToggleBtn" onclick="toggleInputMaximize()" title="Expand or shrink input box">
           <svg viewBox="0 0 24 24">
@@ -1494,6 +1452,9 @@
     const questionUserAvatar = document.getElementById('questionUserAvatar');
     const questionUserLabel = document.getElementById('questionUserLabel');
 
+    const luffyPerch = document.getElementById('luffyPerch');
+    const luffyBubble = document.getElementById('luffyBubble');
+
     function applyUserProfile() {
       sidebarUserName.textContent = currentUserName;
       sidebarAvatarBadge.textContent = currentUserAvatar;
@@ -1557,9 +1518,10 @@
       localStorage.setItem('gibbon_user_avatar', currentUserAvatar);
       applyUserProfile();
       closeSettingsModal();
-      triggerLuffyAction(`Hey ${currentUserName}!`);
+      triggerLuffyHooii(`Hey ${currentUserName}!`);
     }
 
+    // Auto-resizing textarea & excited Luffy reaction
     function adjustTextareaHeight() {
       if (!dockContainer.classList.contains('maximized')) {
         hudInput.style.height = 'auto';
@@ -1567,10 +1529,16 @@
       }
     }
 
+    let typingTimer;
     hudInput.addEventListener('input', () => {
       adjustTextareaHeight();
       if (hudInput.value.trim().length > 0) {
-        setLuffyState('curious');
+        setLuffyState('excited');
+        triggerLuffyHooii("Hooiii!");
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+          if (!currentAudio) setLuffyState(null);
+        }, 3000);
       } else if (!currentAudio) {
         setLuffyState(null);
       }
@@ -1616,7 +1584,6 @@
       return text.replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
     }
 
-    // Markdown Formatter: renders text and converts tables into cyber-styled HTML tables
     function formatMarkdownResponse(text) {
       if (!text) return "";
 
@@ -1672,6 +1639,44 @@
       return output.join("<br>");
     }
 
+    // Luffy Interactive Behaviors
+    let bubbleTimer = null;
+    function triggerLuffyHooii(customText) {
+      luffyBubble.textContent = customText || "Hooiii!";
+      luffyBubble.classList.add('show');
+      clearTimeout(bubbleTimer);
+      bubbleTimer = setTimeout(() => {
+        luffyBubble.classList.remove('show');
+      }, 2200);
+
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(987.77, ctx.currentTime + 0.14);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.14);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.14);
+      } catch (e) {}
+    }
+
+    luffyPerch.addEventListener('click', () => {
+      setLuffyState('excited');
+      triggerLuffyHooii("Hooiii Chief!");
+      setTimeout(() => {
+        if (!currentAudio) setLuffyState(null);
+      }, 2400);
+    });
+
+    function setLuffyState(state) {
+      luffyPerch.classList.remove('excited', 'speaking');
+      if (state) luffyPerch.classList.add(state);
+    }
+
     const micBtn = document.getElementById('micBtn');
     const telemetryStatus = document.getElementById('telemetryStatus');
     const logContent = document.getElementById('logContent');
@@ -1686,9 +1691,6 @@
     const closeSidebarBtn = document.getElementById('closeSidebarBtn');
     const sidebarBackdrop = document.getElementById('sidebarBackdrop');
     const hudSidebar = document.getElementById('hudSidebar');
-    const reactorPodium = document.getElementById('reactorPodium');
-    const luffyWidget = document.getElementById('luffyWidget');
-    const luffyBubble = document.getElementById('luffyBubble');
 
     const wakeAliases = ["gibbon", "given", "gibons", "gibin", "gabon", "kiban", "gibson"];
     let waveInterval;
@@ -1698,50 +1700,6 @@
     let accumulatedDirective = "";
     let currentAudio = null;
     let recognizer = null;
-
-    const luffyQuotes = ["Shishishi!", "Meat!! 🍖", "I'm gonna be King of the Pirates!", "Tell me more!", "Gomu Gomu no...", "Sugoi!!"];
-    let bubbleTimer = null;
-
-    function triggerLuffyAction(quoteText) {
-      luffyBubble.textContent = quoteText || luffyQuotes[Math.floor(Math.random() * luffyQuotes.length)];
-      luffyBubble.classList.add('show');
-      clearTimeout(bubbleTimer);
-      bubbleTimer = setTimeout(() => {
-        luffyBubble.classList.remove('show');
-      }, 2400);
-
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.18, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.15);
-      } catch (e) {}
-    }
-
-    luffyWidget.addEventListener('click', () => triggerLuffyAction());
-
-    function setLuffyState(state) {
-      luffyWidget.classList.remove('curious', 'thinking', 'focused');
-      if (state) luffyWidget.classList.add(state);
-    }
-
-    setInterval(() => {
-      if (!currentAudio && !isListening && hudInput.value.trim().length === 0) {
-        const actions = ['curious', 'thinking'];
-        const chosen = actions[Math.floor(Math.random() * actions.length)];
-        setLuffyState(chosen);
-        setTimeout(() => {
-          if (!currentAudio && !isListening) setLuffyState(null);
-        }, 2200);
-      }
-    }, 9000);
 
     function openSidebar() {
       hudSidebar.classList.add('open');
@@ -1798,7 +1756,7 @@
       hudInput.value = `Tell me more about: ${session.prompt}`;
       adjustTextareaHeight();
       hudInput.focus();
-      setLuffyState('curious');
+      setLuffyState('excited');
       closeSidebar();
     }
 
@@ -1814,7 +1772,7 @@
       logContent.innerHTML = `Memory refreshed, ${currentUserName}! Ready for your questions.`;
       userQuestionCard.style.display = "none";
       mediaHolder.style.display = "none";
-      triggerLuffyAction("Fresh start!");
+      triggerLuffyHooii("Clean slate!");
       closeSidebar();
     }
 
@@ -1835,7 +1793,6 @@
       }
       animateWaves(false);
       setLuffyState(null);
-      reactorPodium.classList.remove('active');
       telemetryStatus.textContent = "MUTED";
       liveHearing.textContent = "Audio stopped.";
 
@@ -1846,7 +1803,6 @@
 
     function animateWaves(active) {
       if (active) {
-        reactorPodium.classList.add('active');
         waveInterval = setInterval(() => {
           waveBars.forEach(b => {
             b.style.height = `${Math.floor(Math.random() * 8) + 3}px`;
@@ -1854,7 +1810,6 @@
         }, 110);
       } else {
         clearInterval(waveInterval);
-        reactorPodium.classList.remove('active');
         waveBars.forEach(b => b.style.height = '3px');
       }
     }
@@ -1877,7 +1832,7 @@
         return;
       }
 
-      setLuffyState('focused');
+      setLuffyState('speaking');
 
       if (currentAudio) {
         currentAudio.pause();
@@ -1929,7 +1884,7 @@
       liveHearing.textContent = "";
       mediaHolder.style.display = "none";
       animateWaves(true);
-      setLuffyState('thinking');
+      setLuffyState('excited');
 
       try {
         const res = await fetch('/api/chat', {
@@ -2029,7 +1984,7 @@
           awaitingDirective = true;
           accumulatedDirective = "";
           micBtn.classList.add('listening');
-          setLuffyState('curious');
+          setLuffyState('excited');
           telemetryStatus.textContent = "LISTENING";
           liveHearing.textContent = `I am listening, ${currentUserName}...`;
         }
@@ -2054,8 +2009,8 @@
           if (triggered) {
             awaitingDirective = true;
             micBtn.classList.add('listening');
-            setLuffyState('curious');
-            triggerLuffyAction(`Yes, ${currentUserName}!`);
+            setLuffyState('excited');
+            triggerLuffyHooii(`Yes, ${currentUserName}!`);
             telemetryStatus.textContent = "ENGAGED";
 
             for (const alias of wakeAliases) {
@@ -2068,7 +2023,7 @@
             liveHearing.textContent = "Gibbon active! Speak now...";
           }
         } else {
-          setLuffyState('curious');
+          setLuffyState('excited');
           if (finalized.trim()) {
             accumulatedDirective += ' ' + finalized.trim();
           }
