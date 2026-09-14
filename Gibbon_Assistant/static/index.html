@@ -232,7 +232,7 @@
     /* LUFFY ANCHORED TO TOP EDGE OF THE DOCK - MOVES UPWARDS AUTOMATICALLY AS DOCK EXPANDS */
     .luffy-dock-perch { 
       position: absolute; 
-      bottom: calc(100% + 6px); 
+      bottom: calc(100% + 4px); 
       right: 28px; 
       width: 66px; 
       height: 68px; 
@@ -246,12 +246,46 @@
     .luffy-bubble.show { opacity: 1; }
 
     .luffy-svg-3d { width: 100%; height: 100%; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.75)); animation: luffyBreathing 3.6s ease-in-out infinite; transform-origin: bottom center; }
-    .luffy-dock-perch.excited .luffy-svg-3d { animation: luffyWaveHooii 0.6s ease-in-out infinite alternate !important; }
-    .luffy-dock-perch.speaking .luffy-svg-3d { animation: luffySpeakingBounce 0.5s ease-in-out infinite alternate !important; }
+    
+    /* ANIMATIONS FOR STRETCHING, LOOKING, AND WAVING */
+    .luffy-dock-perch.excited .luffy-svg-3d { 
+      animation: luffyStretchAndLook 0.5s ease-in-out infinite alternate !important; 
+    }
+    .luffy-dock-perch.speaking .luffy-svg-3d { 
+      animation: luffySpeakingBounce 0.4s ease-in-out infinite alternate !important; 
+    }
+    .luffy-dock-perch.greeting .luffy-svg-3d { 
+      animation: luffyGreetWave 0.8s ease-in-out 2 !important; 
+    }
 
     @keyframes luffyBreathing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
-    @keyframes luffyWaveHooii { 0% { transform: translateY(-3px) rotate(-4deg); } 100% { transform: translateY(-8px) rotate(5deg) scale(1.05); } }
-    @keyframes luffySpeakingBounce { 0% { transform: translateY(0) scale(1, 1); } 100% { transform: translateY(-6px) scale(1.05, 0.95); } }
+    
+    @keyframes luffyStretchAndLook { 
+      0% { transform: translateY(0) scale(1, 1); } 
+      100% { transform: translateY(-14px) scale(0.92, 1.08); } 
+    }
+
+    @keyframes luffySpeakingBounce { 
+      0% { transform: translateY(-4px) rotate(-3deg); } 
+      100% { transform: translateY(-10px) rotate(3deg); } 
+    }
+
+    @keyframes luffyGreetWave { 
+      0%, 100% { transform: translateY(0) rotate(0deg); } 
+      50% { transform: translateY(-12px) rotate(-8deg) scale(1.05); } 
+    }
+
+    .luffy-arm-wave {
+      transform-origin: 72px 86px;
+      transition: transform 0.3s;
+    }
+    .luffy-dock-perch.greeting .luffy-arm-wave {
+      animation: armWaveMotion 0.4s ease-in-out infinite alternate;
+    }
+    @keyframes armWaveMotion {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-25deg); }
+    }
 
     .luffy-hands-grip { position: absolute; bottom: 2px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; }
     .grip-hand { width: 10px; height: 6px; background: #fed7aa; border: 1px solid #1e293b; border-radius: 4px 4px 2px 2px; }
@@ -417,27 +451,44 @@
               </linearGradient>
             </defs>
 
-            <ellipse cx="50" cy="38" rx="46" ry="13" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
-            <path d="M16 38 Q50 33 84 38" stroke="#dc2626" stroke-width="5" fill="none"/>
-            <path d="M26 36 C28 12, 72 12, 74 36 Z" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
-            <path d="M26 35 Q50 31 74 35" stroke="#b91c1c" stroke-width="6" fill="none"/>
-            <path d="M23 44 Q14 54 24 64 Q18 68 28 74" fill="#090d16"/>
-            <path d="M77 44 Q86 54 76 64 Q82 68 72 74" fill="#090d16"/>
-            <circle cx="50" cy="58" r="25" fill="url(#faceGrad)" stroke="#1e293b" stroke-width="1.8"/>
-            <circle cx="24" cy="60" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
-            <circle cx="76" cy="60" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
-            <path d="M27 44 L33 54 L41 45 L50 56 L59 46 L67 55 L73 45 Z" fill="#090d16"/>
-            <ellipse cx="38" cy="56" rx="4" ry="5.2" fill="#090d16"/>
-            <ellipse cx="62" cy="56" rx="4" ry="5.2" fill="#090d16"/>
-            <circle cx="39.5" cy="54" r="1.5" fill="#ffffff"/>
-            <circle cx="63.5" cy="54" r="1.5" fill="#ffffff"/>
-            <path d="M33 64 L41 64 M35 62 L35 66 M39 62 L39 66" stroke="#1e293b" stroke-width="1.3" stroke-linecap="round"/>
-            <ellipse cx="32" cy="61" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
-            <ellipse cx="68" cy="61" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
-            <path d="M39 68 Q50 78 61 68 Z" fill="#ffffff" stroke="#090d16" stroke-width="1.8"/>
-            <path d="M43 71 Q50 74 57 71" stroke="#ef4444" stroke-width="1.2" fill="none"/>
-            <path d="M32 82 L68 82 L75 106 L25 106 Z" fill="url(#redVest)" stroke="#7f1d1d" stroke-width="1.8"/>
-            <path d="M43 82 L50 94 L57 82 Z" fill="#fed7aa"/>
+            <!-- STRAW HAT LOWERED DOWN TO PROPERLY COVER FOREHEAD -->
+            <ellipse cx="50" cy="44" rx="46" ry="13" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
+            <path d="M16 44 Q50 39 84 44" stroke="#dc2626" stroke-width="5" fill="none"/>
+            <path d="M26 42 C28 18, 72 18, 74 42 Z" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
+            <path d="M26 41 Q50 37 74 41" stroke="#b91c1c" stroke-width="6" fill="none"/>
+
+            <!-- HAIR & FACE LOWERED -->
+            <path d="M23 50 Q14 60 24 70 Q18 74 28 80" fill="#090d16"/>
+            <path d="M77 50 Q86 60 76 60 Q82 74 72 80" fill="#090d16"/>
+            <circle cx="50" cy="64" r="25" fill="url(#faceGrad)" stroke="#1e293b" stroke-width="1.8"/>
+
+            <circle cx="24" cy="66" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
+            <circle cx="76" cy="66" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
+
+            <!-- BANGS POSITIONED UNDER BRIM -->
+            <path d="M27 50 L33 60 L41 51 L50 62 L59 52 L67 61 L73 51 Z" fill="#090d16"/>
+
+            <ellipse cx="38" cy="62" rx="4" ry="5.2" fill="#090d16"/>
+            <ellipse cx="62" cy="62" rx="4" ry="5.2" fill="#090d16"/>
+            <circle cx="39.5" cy="60" r="1.5" fill="#ffffff"/>
+            <circle cx="63.5" cy="60" r="1.5" fill="#ffffff"/>
+
+            <path d="M33 70 L41 70 M35 68 L35 72 M39 68 L39 72" stroke="#1e293b" stroke-width="1.3" stroke-linecap="round"/>
+
+            <ellipse cx="32" cy="67" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
+            <ellipse cx="68" cy="67" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
+
+            <path d="M39 74 Q50 84 61 74 Z" fill="#ffffff" stroke="#090d16" stroke-width="1.8"/>
+            <path d="M43 77 Q50 80 57 77" stroke="#ef4444" stroke-width="1.2" fill="none"/>
+
+            <path d="M32 88 L68 88 L75 110 L25 110 Z" fill="url(#redVest)" stroke="#7f1d1d" stroke-width="1.8"/>
+            <path d="M43 88 L50 100 L57 88 Z" fill="#fed7aa"/>
+
+            <!-- WAVING/POINTING ARM -->
+            <g id="luffyArm" class="luffy-arm-wave">
+              <path d="M72 86 Q88 74 84 60" stroke="#fed7aa" stroke-width="6" stroke-linecap="round" fill="none"/>
+              <circle cx="84" cy="58" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1"/>
+            </g>
           </svg>
 
           <div class="luffy-hands-grip">
@@ -869,6 +920,28 @@
       setTimeout(() => {
         if (!currentAudio) setLuffyState(null);
       }, 2400);
+    }
+
+    // Trigger greeting automatically upon opening/loading the chat
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        luffyGreet();
+      }, 500);
+    });
+
+    function luffyGreet() {
+      luffyPerch.classList.add('greeting', 'excited');
+      triggerLuffyBubble(`Oooi ${currentUserName}!`);
+      
+      if (!isVoiceMuted) {
+        const greetingAudio = new Audio(`/api/tts?text=${encodeURIComponent("Oooi " + currentUserName + "!")}`);
+        currentAudio = greetingAudio;
+        currentAudio.play().catch(() => {});
+      }
+
+      setTimeout(() => {
+        luffyPerch.classList.remove('greeting', 'excited');
+      }, 2500);
     }
 
     async function sendMessage() {
