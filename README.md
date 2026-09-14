@@ -1,2 +1,2 @@
 # gibbon-assistant
-Personal JARVIS-inspired AI voice assistant PWA with conversational memory, real-time routing, weather, and free media generation.
+Personal AI assistant web application built with Python, FastAPI, Groq, Gemini, web search, and text-to-speech — designed around personalized conversations and intelligent assistance.
