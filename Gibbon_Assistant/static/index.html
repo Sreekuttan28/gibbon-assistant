@@ -243,7 +243,7 @@
       resize: none; 
       overflow-y: auto;
       line-height: 1.4;
-      padding: 4px 0; /* Ensures cursor/text doesn't vanish at bottom */
+      padding: 4px 0; 
     }
 
     /* LUFFY ANCHORED */
@@ -263,12 +263,46 @@
     .luffy-bubble.show { opacity: 1; }
 
     .luffy-svg-3d { width: 100%; height: 100%; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.75)); animation: luffyBreathing 3.6s ease-in-out infinite; transform-origin: bottom center; }
-    .luffy-dock-perch.excited .luffy-svg-3d { animation: luffyWaveHooii 0.6s ease-in-out infinite alternate !important; }
-    .luffy-dock-perch.speaking .luffy-svg-3d { animation: luffySpeakingBounce 0.5s ease-in-out infinite alternate !important; }
+    
+    /* ANIMATIONS FOR STRETCHING, LOOKING, AND WAVING */
+    .luffy-dock-perch.excited .luffy-svg-3d { 
+      animation: luffyStretchAndLook 0.5s ease-in-out infinite alternate !important; 
+    }
+    .luffy-dock-perch.speaking .luffy-svg-3d { 
+      animation: luffySpeakingBounce 0.4s ease-in-out infinite alternate !important; 
+    }
+    .luffy-dock-perch.greeting .luffy-svg-3d { 
+      animation: luffyGreetWave 0.8s ease-in-out 2 !important; 
+    }
 
     @keyframes luffyBreathing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
-    @keyframes luffyWaveHooii { 0% { transform: translateY(-3px) rotate(-4deg); } 100% { transform: translateY(-8px) rotate(5deg) scale(1.05); } }
-    @keyframes luffySpeakingBounce { 0% { transform: translateY(0) scale(1, 1); } 100% { transform: translateY(-6px) scale(1.05, 0.95); } }
+    
+    @keyframes luffyStretchAndLook { 
+      0% { transform: translateY(0) scale(1, 1); } 
+      100% { transform: translateY(-14px) scale(0.92, 1.08); } 
+    }
+
+    @keyframes luffySpeakingBounce { 
+      0% { transform: translateY(-4px) rotate(-3deg); } 
+      100% { transform: translateY(-10px) rotate(3deg); } 
+    }
+
+    @keyframes luffyGreetWave { 
+      0%, 100% { transform: translateY(0) rotate(0deg); } 
+      50% { transform: translateY(-12px) rotate(-8deg) scale(1.05); } 
+    }
+
+    .luffy-arm-wave {
+      transform-origin: 72px 86px;
+      transition: transform 0.3s;
+    }
+    .luffy-dock-perch.greeting .luffy-arm-wave {
+      animation: armWaveMotion 0.4s ease-in-out infinite alternate;
+    }
+    @keyframes armWaveMotion {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-25deg); }
+    }
 
     .luffy-hands-grip { position: absolute; bottom: 2px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; }
     .grip-hand { width: 10px; height: 6px; background: #fed7aa; border: 1px solid #1e293b; border-radius: 4px 4px 2px 2px; }
@@ -451,6 +485,12 @@
             <path d="M43 77 Q50 80 57 77" stroke="#ef4444" stroke-width="1.2" fill="none"/>
             <path d="M32 88 L68 88 L75 110 L25 110 Z" fill="url(#redVest)" stroke="#7f1d1d" stroke-width="1.8"/>
             <path d="M43 88 L50 100 L57 88 Z" fill="#fed7aa"/>
+
+            <!-- WAVING/POINTING ARM -->
+            <g id="luffyArm" class="luffy-arm-wave">
+              <path d="M72 86 Q88 74 84 60" stroke="#fed7aa" stroke-width="6" stroke-linecap="round" fill="none"/>
+              <circle cx="84" cy="58" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1"/>
+            </g>
           </svg>
 
           <div class="luffy-hands-grip">
@@ -648,18 +688,24 @@
     }
 
     function startNewThread() {
+      stopCurrentAudio();
       activeSessionId = 'session_' + Date.now();
       localStorage.setItem('gibbon_active_thread', activeSessionId);
       
       const stream = document.getElementById('chatStream');
-      stream.innerHTML = '';
+      stream.innerHTML = `
+        <div style="text-align:center; color:#64748b; font-size:0.8rem; padding:24px;">
+          Started a fresh conversation. What's on your mind?
+        </div>
+      `;
+      stream.scrollTop = 0;
 
-      document.getElementById('hudInput').value = '';
-      document.getElementById('hudInput').style.height = 'auto';
-      document.getElementById('hudInput').focus();
+      const input = document.getElementById('hudInput');
+      input.value = '';
+      input.style.height = 'auto';
+      input.focus();
 
       renderThreadList(localThreads);
-
       document.getElementById('hudSidebar').classList.remove('open');
       document.getElementById('sidebarBackdrop').classList.remove('active');
 
@@ -700,7 +746,13 @@
     }
 
     async function switchThread(sessionId) {
-      if (!sessionId) return;
+      if (!sessionId || sessionId === activeSessionId) {
+        document.getElementById('hudSidebar').classList.remove('open');
+        document.getElementById('sidebarBackdrop').classList.remove('active');
+        return;
+      }
+
+      stopCurrentAudio();
       activeSessionId = sessionId;
       localStorage.setItem('gibbon_active_thread', activeSessionId);
       
@@ -716,7 +768,7 @@
       stream.innerHTML = '<div style="text-align:center; color:#64748b; font-size:0.8rem; padding:12px;">Loading thread logs...</div>';
       
       try {
-        const res = await fetch(`/api/thread_messages?session_id=${encodeURIComponent(activeSessionId)}`);
+        const res = await fetch(`/api/thread_messages?session_id=${encodeURIComponent(activeSessionId)}&user_id=${encodeURIComponent(userId)}`);
         const data = await res.json();
         
         stream.innerHTML = '';
