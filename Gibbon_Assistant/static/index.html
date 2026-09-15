@@ -972,6 +972,14 @@
         hour12: true
       }).format(now).toUpperCase();
 
+      // --- ADDED FIX: Capture local browser time ---
+      const clientTime = now.toLocaleString("en-US", {
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        dateStyle: "full",
+        timeStyle: "medium"
+      });
+      // ---------------------------------------------
+
       appendMessage('user', val, nowTs);
 
       saveThreadLocally(activeSessionId, val, nowTs);
@@ -988,7 +996,8 @@
             message: val,
             session_id: activeSessionId,
             user_id: userId,
-            user_name: currentUserName
+            user_name: currentUserName,
+            client_time: clientTime // <-- ADDED FIX: Sending time to Python backend
           })
         });
         const data = await res.json();
