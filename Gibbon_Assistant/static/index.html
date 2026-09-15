@@ -48,11 +48,11 @@
     .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: 95; backdrop-filter: blur(4px); }
     .sidebar-backdrop.active { display: block; }
 
-    /* SIDEBAR */
+    /* SIDEBAR - OPEN ON SCREENS 800PX AND ABOVE */
     .hud-sidebar { width: var(--sidebar-width); background: rgba(8, 14, 28, 0.98); border-right: 1px solid var(--panel-border); backdrop-filter: blur(16px); display: flex; flex-direction: column; padding: 14px; z-index: 100; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; position: fixed; top: 0; bottom: 0; left: 0; transform: translateX(-100%); }
     .hud-sidebar.open { transform: translateX(0); }
 
-    @media (min-width: 900px) {
+    @media (min-width: 800px) {
       .hud-sidebar { position: relative; transform: translateX(0) !important; }
       .sidebar-toggle-btn { display: none !important; }
       .sidebar-backdrop { display: none !important; }
@@ -140,19 +140,19 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 4px 6px;
+      padding: 6px 4px;
       background: transparent;
       border: none;
       box-shadow: none;
-      gap: 8px;
+      gap: 6px;
     }
 
-    .header-left-tools { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .header-left-tools { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .sidebar-toggle-btn { background: transparent; border: none; color: var(--primary); cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
 
-    .center-brand-title { display: flex; align-items: center; gap: 6px; flex-shrink: 1; min-width: 0; overflow: hidden; }
+    .center-brand-title { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .center-brand-title img { width: 22px; height: 22px; object-fit: contain; border-radius: 6px; background: #fff; padding: 2px; flex-shrink: 0; }
-    .title-styled-text { font-family: 'Syncopate', sans-serif; font-size: clamp(0.6rem, 1.8vw, 0.82rem); font-weight: 700; letter-spacing: 1px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .title-styled-text { font-family: 'Syncopate', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; color: #fff; white-space: normal; text-align: center; line-height: 1.1; }
     .title-styled-text span { color: var(--primary); margin: 0 2px; }
 
     .header-right-tools { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -166,6 +166,23 @@
     .privacy-shield-btn:hover .privacy-tooltip { display: block; }
 
     .audio-toggle-btn { background: rgba(0, 240, 255, 0.1); border: 1px solid var(--primary); color: var(--primary); padding: 3px 6px; border-radius: 6px; cursor: pointer; font-size: 0.68rem; white-space: nowrap; flex-shrink: 0; }
+
+    /* MOBILE HEADER RESPONSIVE WRAP */
+    @media (max-width: 600px) {
+      .hud-header-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .header-left-tools { order: 1; }
+      .header-right-tools { order: 2; margin-left: auto; }
+      .center-brand-title {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        margin-top: 4px;
+      }
+      .center-brand-title img { display: inline-block; }
+    }
 
     /* CHAT STREAM FEED */
     .chat-stream-box { width: 100%; max-width: 760px; margin: 0 auto; flex: 1; overflow-y: auto; padding: 10px 4px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
@@ -197,7 +214,7 @@
     .spin-ring { width: 12px; height: 12px; border: 2px solid var(--primary); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* FOOTER & DOCK - UPWARD EXPANSION WITH LUFFY RIDING ALONG */
+    /* FOOTER & DOCK */
     .hud-footer { width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; padding-top: 10px; }
     
     .dock-pill-container { 
@@ -216,7 +233,7 @@
     .dock-pill-container textarea { 
       flex: 1; 
       min-height: 24px; 
-      max-height: 140px; 
+      max-height: 120px; 
       background: transparent; 
       border: none; 
       color: #fff; 
@@ -226,10 +243,10 @@
       resize: none; 
       overflow-y: auto;
       line-height: 1.4;
-      padding-top: 2px;
+      padding: 4px 0; /* Ensures cursor/text doesn't vanish at bottom */
     }
 
-    /* LUFFY ANCHORED TO TOP EDGE OF THE DOCK - MOVES UPWARDS AUTOMATICALLY AS DOCK EXPANDS */
+    /* LUFFY ANCHORED */
     .luffy-dock-perch { 
       position: absolute; 
       bottom: calc(100% + 4px); 
@@ -246,46 +263,12 @@
     .luffy-bubble.show { opacity: 1; }
 
     .luffy-svg-3d { width: 100%; height: 100%; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.75)); animation: luffyBreathing 3.6s ease-in-out infinite; transform-origin: bottom center; }
-    
-    /* ANIMATIONS FOR STRETCHING, LOOKING, AND WAVING */
-    .luffy-dock-perch.excited .luffy-svg-3d { 
-      animation: luffyStretchAndLook 0.5s ease-in-out infinite alternate !important; 
-    }
-    .luffy-dock-perch.speaking .luffy-svg-3d { 
-      animation: luffySpeakingBounce 0.4s ease-in-out infinite alternate !important; 
-    }
-    .luffy-dock-perch.greeting .luffy-svg-3d { 
-      animation: luffyGreetWave 0.8s ease-in-out 2 !important; 
-    }
+    .luffy-dock-perch.excited .luffy-svg-3d { animation: luffyWaveHooii 0.6s ease-in-out infinite alternate !important; }
+    .luffy-dock-perch.speaking .luffy-svg-3d { animation: luffySpeakingBounce 0.5s ease-in-out infinite alternate !important; }
 
     @keyframes luffyBreathing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
-    
-    @keyframes luffyStretchAndLook { 
-      0% { transform: translateY(0) scale(1, 1); } 
-      100% { transform: translateY(-14px) scale(0.92, 1.08); } 
-    }
-
-    @keyframes luffySpeakingBounce { 
-      0% { transform: translateY(-4px) rotate(-3deg); } 
-      100% { transform: translateY(-10px) rotate(3deg); } 
-    }
-
-    @keyframes luffyGreetWave { 
-      0%, 100% { transform: translateY(0) rotate(0deg); } 
-      50% { transform: translateY(-12px) rotate(-8deg) scale(1.05); } 
-    }
-
-    .luffy-arm-wave {
-      transform-origin: 72px 86px;
-      transition: transform 0.3s;
-    }
-    .luffy-dock-perch.greeting .luffy-arm-wave {
-      animation: armWaveMotion 0.4s ease-in-out infinite alternate;
-    }
-    @keyframes armWaveMotion {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(-25deg); }
-    }
+    @keyframes luffyWaveHooii { 0% { transform: translateY(-3px) rotate(-4deg); } 100% { transform: translateY(-8px) rotate(5deg) scale(1.05); } }
+    @keyframes luffySpeakingBounce { 0% { transform: translateY(0) scale(1, 1); } 100% { transform: translateY(-6px) scale(1.05, 0.95); } }
 
     .luffy-hands-grip { position: absolute; bottom: 2px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; }
     .grip-hand { width: 10px; height: 6px; background: #fed7aa; border: 1px solid #1e293b; border-radius: 4px 4px 2px 2px; }
@@ -304,10 +287,6 @@
     .send-pill-btn svg { width: 17px; height: 17px; fill: #fff; }
 
     .disclaimer-text { font-size: 0.66rem; color: #64748b; text-align: center; padding: 4px 0 2px; flex-shrink: 0; }
-
-    @media (max-width: 500px) {
-      .center-brand-title img { display: none; }
-    }
   </style>
 </head>
 <body>
@@ -398,11 +377,6 @@
           <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰ CHATS</button>
         </div>
 
-        <div class="center-brand-title">
-          <img src="/static/logo.png" alt="ML">
-          <div class="title-styled-text">GIBBON<span>//</span>MOKUTTAN LABS</div>
-        </div>
-
         <!-- TIMING SECTIONS & WARNING ICON -->
         <div class="header-right-tools">
           <div class="time-stacked-box">
@@ -416,6 +390,11 @@
             </div>
           </div>
           <button class="audio-toggle-btn" id="voiceMuteToggleBtn" onclick="toggleVoice()">🔊 VOICE ON</button>
+        </div>
+        
+        <div class="center-brand-title">
+          <img src="/static/logo.png" alt="ML">
+          <div class="title-styled-text">GIBBON<span>//</span>MOKUTTAN LABS</div>
         </div>
       </div>
     </header>
@@ -451,44 +430,27 @@
               </linearGradient>
             </defs>
 
-            <!-- STRAW HAT LOWERED DOWN TO PROPERLY COVER FOREHEAD -->
             <ellipse cx="50" cy="44" rx="46" ry="13" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
             <path d="M16 44 Q50 39 84 44" stroke="#dc2626" stroke-width="5" fill="none"/>
             <path d="M26 42 C28 18, 72 18, 74 42 Z" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
             <path d="M26 41 Q50 37 74 41" stroke="#b91c1c" stroke-width="6" fill="none"/>
-
-            <!-- HAIR & FACE LOWERED -->
             <path d="M23 50 Q14 60 24 70 Q18 74 28 80" fill="#090d16"/>
-            <path d="M77 50 Q86 60 76 60 Q82 74 72 80" fill="#090d16"/>
+            <path d="M77 50 Q86 60 76 70 Q82 74 72 80" fill="#090d16"/>
             <circle cx="50" cy="64" r="25" fill="url(#faceGrad)" stroke="#1e293b" stroke-width="1.8"/>
-
             <circle cx="24" cy="66" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
             <circle cx="76" cy="66" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1.4"/>
-
-            <!-- BANGS POSITIONED UNDER BRIM -->
             <path d="M27 50 L33 60 L41 51 L50 62 L59 52 L67 61 L73 51 Z" fill="#090d16"/>
-
             <ellipse cx="38" cy="62" rx="4" ry="5.2" fill="#090d16"/>
             <ellipse cx="62" cy="62" rx="4" ry="5.2" fill="#090d16"/>
             <circle cx="39.5" cy="60" r="1.5" fill="#ffffff"/>
             <circle cx="63.5" cy="60" r="1.5" fill="#ffffff"/>
-
             <path d="M33 70 L41 70 M35 68 L35 72 M39 68 L39 72" stroke="#1e293b" stroke-width="1.3" stroke-linecap="round"/>
-
             <ellipse cx="32" cy="67" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
             <ellipse cx="68" cy="67" rx="4" ry="2.2" fill="#f43f5e" opacity="0.6"/>
-
             <path d="M39 74 Q50 84 61 74 Z" fill="#ffffff" stroke="#090d16" stroke-width="1.8"/>
             <path d="M43 77 Q50 80 57 77" stroke="#ef4444" stroke-width="1.2" fill="none"/>
-
             <path d="M32 88 L68 88 L75 110 L25 110 Z" fill="url(#redVest)" stroke="#7f1d1d" stroke-width="1.8"/>
             <path d="M43 88 L50 100 L57 88 Z" fill="#fed7aa"/>
-
-            <!-- WAVING/POINTING ARM -->
-            <g id="luffyArm" class="luffy-arm-wave">
-              <path d="M72 86 Q88 74 84 60" stroke="#fed7aa" stroke-width="6" stroke-linecap="round" fill="none"/>
-              <circle cx="84" cy="58" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1"/>
-            </g>
           </svg>
 
           <div class="luffy-hands-grip">
