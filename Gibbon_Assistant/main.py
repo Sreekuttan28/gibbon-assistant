@@ -31,7 +31,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v43")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v44")
 IST = ZoneInfo("Asia/Kolkata")
 
 def get_ist_now() -> datetime:
@@ -136,7 +136,7 @@ def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> st
         f"The user's name is {call_name}. Address them naturally by their name ({call_name}) and NEVER refer to them as 'Chief' unless their name is explicitly Chief. "
         f"Current real-world date and time: {now_str} (Indian Standard Time). "
         "CRITICAL RULES: "
-        "1. REAL-WORLD ACCURACY & DATES: Today is Monday, September 14, 2026. Ganesh Chaturthi falls on this exact date (September 14, 2026). Always verify dates against live context and current calendar data. "
+        "1. REAL-WORLD ACCURACY & DATES: Always evaluate 'today', 'current date', and events strictly against the dynamically provided real-world date and time above. Do not rely on outdated assumptions. "
         "2. FORMATTING: Use clean Bullet Points (*) or direct paragraphs. Do NOT force tables for general information or descriptions. Use tables only when specifically asked to compare items or data. "
         "3. CONTINUITY: You are inside an isolated chat thread. Maintain focus on the questions asked in THIS thread only without cross-contamination. "
         "4. SONG LYRICS & SUMMARIES: If asked for song lyrics or summaries, provide a helpful summary, credit artists, and quote chorus lines directly without refusal."
@@ -308,7 +308,8 @@ async def process_command(request: Request):
             final_search_query = f"{last_user_turn} {final_search_query}"
 
     if any(k in lower for k in ["today", "holiday", "festival", "speciality", "specialty", "date"]):
-        final_search_query = f"{raw_message} September 2026 India Ganesh Chaturthi"
+        current_date_query = get_ist_now().strftime("%B %Y")
+        final_search_query = f"{raw_message} {current_date_query} India"
 
     if any(k in lower for k in ["parashini", "parassini", "parassinikkadavu"]):
         final_search_query += " Kannur Kerala Muthappan temple"
@@ -333,7 +334,6 @@ async def text_to_speech(text: str):
     clean_text = re.sub(r'[*#_`|~>—–-]', ' ', clean_text)
     clean_text = re.sub(r'\s+', ' ', clean_text).strip()[:4000]
 
-    # Updated to use Indian English (en-IN) neural voices
     candidate_voices = ["en-IN-NeerjaNeural", "en-IN-PrabhatNeural"]
     audio_data = bytearray()
 
