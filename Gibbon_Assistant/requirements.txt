@@ -1,11 +1,9 @@
 fastapi
 uvicorn
-python-dotenv
+psycopg2-binary
 requests
-geopy
-duckduckgo_search
-beautifulsoup4
 google-genai
 groq
 edge-tts
-psycopg2-binary
+duckduckgo-search
+python-dotenv
