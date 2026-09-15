@@ -31,7 +31,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v44")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v45")
 IST = ZoneInfo("Asia/Kolkata")
 
 def get_ist_now() -> datetime:
@@ -136,7 +136,7 @@ def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> st
         f"The user's name is {call_name}. Address them naturally by their name ({call_name}) and NEVER refer to them as 'Chief' unless their name is explicitly Chief. "
         f"Current real-world date and time: {now_str} (Indian Standard Time). "
         "CRITICAL RULES: "
-        "1. REAL-WORLD ACCURACY & DATES: Always evaluate 'today', 'current date', and events strictly against the dynamically provided real-world date and time above. Do not rely on outdated assumptions. "
+        "1. UNIVERSAL FACTUAL ACCURACY: Always base your answers on the provided LIVE WEB CONTEXT regardless of the topic (movies, places, dates, news, tech). Do not guess or hallucinate. "
         "2. FORMATTING: Use clean Bullet Points (*) or direct paragraphs. Do NOT force tables for general information or descriptions. Use tables only when specifically asked to compare items or data. "
         "3. CONTINUITY: You are inside an isolated chat thread. Maintain focus on the questions asked in THIS thread only without cross-contamination. "
         "4. SONG LYRICS & SUMMARIES: If asked for song lyrics or summaries, provide a helpful summary, credit artists, and quote chorus lines directly without refusal."
@@ -307,21 +307,18 @@ async def process_command(request: Request):
         if last_user_turn and last_user_turn.lower() != raw_message.lower():
             final_search_query = f"{last_user_turn} {final_search_query}"
 
-    if any(k in lower for k in ["today", "holiday", "festival", "speciality", "specialty", "date"]):
+    if any(k in lower for k in ["today", "holiday", "festival", "speciality", "specialty", "date", "now", "current"]):
         current_date_query = get_ist_now().strftime("%B %Y")
         final_search_query = f"{raw_message} {current_date_query} India"
 
     if any(k in lower for k in ["parashini", "parassini", "parassinikkadavu"]):
         final_search_query += " Kannur Kerala Muthappan temple"
 
-    needs_search = any(w in lower for w in [
-        "today", "holiday", "festival", "speciality", "specialty", "date",
-        "parashini", "parassini", "kannur", "kasaragod", "athiradi", 
-        "places", "tourist", "visit", "famous", "temple", "latest", "movie", "song"
-    ])
+    # UNIVERSAL SEARCH TRIGGER: Fetch context for all topics, skip only for simple conversational greetings
+    conversational_greetings = ["hi", "hello", "hey", "thanks", "thank you", "ok", "okay", "bye", "goodnight", "good morning", "yo", "sup", "yes", "no"]
     
     live_context = ""
-    if needs_search and len(final_search_query) > 2:
+    if lower not in conversational_greetings and len(final_search_query) > 2:
         live_context = search_live_web(final_search_query)
 
     clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
