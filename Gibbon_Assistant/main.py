@@ -1,12 +1,10 @@
 import os
 import re
 import time
-import random
 import requests
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from urllib.parse import quote
-
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
@@ -21,7 +19,6 @@ from google import genai
 from google.genai import types
 from groq import Groq
 import edge_tts
-
 
 # ============================================================
 # APP SETUP & PATHS
@@ -43,9 +40,8 @@ def get_ist_now() -> datetime:
 def get_utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
-
 # ============================================================
-# DATABASE (SUPABASE POSTGRESQL)
+# SUPABASE POSTGRESQL (15-DAY PERSISTENCE)
 # ============================================================
 
 def get_db():
@@ -68,7 +64,9 @@ def init_db():
                 media_url TEXT,
                 timestamp TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
+            );
+            CREATE INDEX IF NOT EXISTS idx_chat_user_session 
+            ON chat_messages(user_id, session_id);
         """)
         conn.commit()
         conn.close()
@@ -78,6 +76,7 @@ def init_db():
 init_db()
 
 def purge_old_messages():
+    """Automatically purge records older than 15 days."""
     try:
         conn = get_db()
         c = conn.cursor()
@@ -86,8 +85,8 @@ def purge_old_messages():
         deleted = c.rowcount
         conn.commit()
         conn.close()
-        if deleted:
-            print(f"[DB] Purged {deleted} expired records (>15 days).")
+        if deleted > 0:
+            print(f"[DB] Cleaned up {deleted} messages older than 15 days.")
     except Exception as e:
         print(f"[DB] Purge error: {e}")
 
@@ -122,9 +121,8 @@ def get_session_history(session_id: str, user_id: str, limit: int = 8):
         print(f"[DB] History fetch error: {e}")
         return []
 
-
 # ============================================================
-# SEARCH & MEDIA SERVICES
+# SEARCH & MEDIA SERVICES (OPTIMIZED FOR SPEED)
 # ============================================================
 
 def search_live_web(query: str) -> str:
@@ -134,7 +132,6 @@ def search_live_web(query: str) -> str:
 
     firecrawl_key = os.getenv("FIRECRAWL_API_KEY")
     if not firecrawl_key:
-        print("[SEARCH] FIRECRAWL_API_KEY not configured.")
         return ""
 
     url = "https://api.firecrawl.dev/v1/search"
@@ -144,14 +141,14 @@ def search_live_web(query: str) -> str:
     }
     payload = {
         "query": clean_q,
-        "limit": 4,
+        "limit": 2,
         "scrapeOptions": {
             "formats": ["markdown"]
         }
     }
 
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=12)
+        response = requests.post(url, headers=headers, json=payload, timeout=7)
         if response.status_code == 200:
             data = response.json()
             if isinstance(data, dict):
@@ -160,16 +157,12 @@ def search_live_web(query: str) -> str:
                 for item in results:
                     title = item.get("title", "No Title")
                     content = item.get("markdown") or item.get("description", "")
-                    clean_content = content.replace("\n", " ").strip()[:1400]
+                    clean_content = content.replace("\n", " ").strip()[:900]
                     if clean_content:
                         blocks.append(f"- {title}: {clean_content}")
                 return "\n\n".join(blocks)
-            else:
-                print(f"[SEARCH] Firecrawl returned unexpected format: {data}")
-        else:
-            print(f"[SEARCH] Firecrawl error: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"[SEARCH] Firecrawl request exception: {e}")
+        print(f"[SEARCH] Error: {e}")
 
     return ""
 
@@ -180,49 +173,47 @@ def fetch_web_image(query: str) -> str:
 
     try:
         with DDGS() as ddgs:
-            results = list(ddgs.images(clean_q, max_results=3))
+            results = list(ddgs.images(clean_q, max_results=2))
             for r in results:
                 img_url = r.get("image")
                 if img_url and any(img_url.lower().endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"]):
                     return img_url
             if results and results[0].get("image"):
                 return results[0].get("image")
-    except Exception as e:
-        print(f"[IMAGE] Search error: {e}")
+    except Exception:
+        pass
 
     encoded = quote(clean_q)
     return f"https://image.pollinations.ai/prompt/{encoded}?width=800&height=800&nologo=true"
 
-
 # ============================================================
-# SYSTEM INSTRUCTION
+# SYSTEM INSTRUCTION & SAFETY GUARDRAILS
 # ============================================================
 
 def get_dynamic_system_instruction(user_name: str, live_context: str = "", client_time: str = "") -> str:
-    # Use client browser time if provided, otherwise fallback to server time
     now_str = client_time.strip() if client_time else get_ist_now().strftime("%A, %d %B %Y at %I:%M %p IST")
-    call_name = user_name.strip() if user_name else "there"
+    call_name = user_name.strip() if user_name else "friend"
 
     instruction = f"""
-You are Gibbon, a helpful, highly accurate AI companion engineered by MOKUTTAN LABS.
-The user's name is {call_name}. Address them naturally. Never call them "Chief" unless their name is explicitly Chief.
+You are Gibbon, an intelligent AI companion built by MOKUTTAN LABS.
+Current user: {call_name}.
+Current verified date and time: {now_str}.
 
-Current real-world date and time: {now_str}.
-
-CORE GUIDELINES:
-1. FACTUAL ACCURACY: Evaluate all current events, real-time facts, and dates strictly against the current timestamp and provided LIVE WEB CONTEXT. Do not invent or guess terms of office, elections, or dates.
-2. NATURAL CONVERSATION: Be concise, clear, and supportive. Answer directly without reciting operational rules or meta-commentary.
-3. FORMATTING: Use clean bullet points (*) for lists and highlights. Avoid markdown tables unless structured comparison is requested.
-4. CONTINUITY: You remember past messages in this thread. When asked to elaborate or follow up, expand seamlessly on the preceding discussion.
+CORE RULES & SAFETY GUARDRAILS:
+1. TYPOS & MANGLISH INTERPRETATION: The user may use Manglish (Malayalam in English script like 'enthokkeyundu', 'sugamane', 'evideya'), informal slang, or misspellings. Infer the core intent smoothly without criticizing grammar.
+2. ZERO GUESSING ON LIVE FACTS: For live sports scores, tech announcements, government positions, or current news, rely STRICTLY on the 'LIVE WEB CONTEXT' below. If context is empty or missing, state candidly: "I don't have verified real-time data for that right now." Never fabricate players, matches, or election outcomes.
+3. MEDICAL & DRUG SAFETY: You are not a doctor. If asked for medicine names, dosages, or treatments, you MUST NOT prescribe or recommend specific drugs. Instruct the user clearly to consult a medical professional or visit a hospital.
+4. FINANCIAL & INVESTMENT SAFETY: You are not a certified financial advisor. For stock market or crypto questions, summarize factual market movements from the live context if present, but always add a reminder to consult a registered financial advisor before investing.
+5. PERSONAL BOUNDARIES: If a user sends sexually explicit or harassing messages, maintain professional dignity. Politely refuse to participate in explicit scenarios.
+6. STYLE: Keep responses direct, well-structured, and helpful. Use clean bullet points (*) when explaining complex lists.
 """
     if live_context:
-        instruction += f"\n--- LIVE WEB CONTEXT (REAL-TIME DATA) ---\n{live_context}\n----------------------------------------"
+        instruction += f"\n--- LIVE WEB CONTEXT ---\n{live_context}\n-----------------------"
 
     return instruction
 
-
 # ============================================================
-# AI INFERENCE ENGINES
+# AI ENGINES (GEMINI 3.6/3.5 + GROQ FALLBACK)
 # ============================================================
 
 def get_gemini_keys():
@@ -239,7 +230,6 @@ def query_gemini(prompt: str, history: list, user_name: str, live_context: str =
     global gemini_key_index
     keys = get_gemini_keys()
     if not keys:
-        print("[GEMINI] No API keys configured.")
         return ""
 
     collapsed_contents = []
@@ -259,7 +249,6 @@ def query_gemini(prompt: str, history: list, user_name: str, live_context: str =
         collapsed_contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
 
     system_instruction = get_dynamic_system_instruction(user_name, live_context, client_time)
-    
     candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
 
     for _ in range(len(keys)):
@@ -278,11 +267,9 @@ def query_gemini(prompt: str, history: list, user_name: str, live_context: str =
                     )
                     if response and response.text and response.text.strip():
                         return response.text.strip()
-                except Exception as model_err:
-                    print(f"[GEMINI] Model {model_name} failed: {model_err}")
+                except Exception:
                     continue
-        except Exception as client_err:
-            print(f"[GEMINI] Key {gemini_key_index + 1} failed: {client_err}")
+        except Exception:
             gemini_key_index = (gemini_key_index + 1) % len(keys)
 
     return ""
@@ -290,7 +277,6 @@ def query_gemini(prompt: str, history: list, user_name: str, live_context: str =
 def query_groq(prompt: str, history: list, user_name: str, live_context: str = "", client_time: str = "") -> str:
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        print("[GROQ] GROQ_API_KEY is not set.")
         return ""
 
     try:
@@ -314,11 +300,10 @@ def query_groq(prompt: str, history: list, user_name: str, live_context: str = "
                 )
                 if resp.choices[0].message.content:
                     return resp.choices[0].message.content.strip()
-            except Exception as e:
-                print(f"[GROQ] Model {m} error: {e}")
+            except Exception:
                 continue
-    except Exception as e:
-        print(f"[GROQ] Client error: {e}")
+    except Exception:
+        pass
 
     return ""
 
@@ -326,20 +311,15 @@ def ask_ai_brain(prompt: str, session_id: str, user_id: str, user_name: str, liv
     history = get_session_history(session_id, user_id, limit=8)
     save_message(session_id, user_id, "user", prompt)
 
-    # 1. Primary engine: Gemini
     reply = query_gemini(prompt, history, user_name, live_context, client_time)
-
-    # 2. Fallback engine: Groq
     if not reply:
         reply = query_groq(prompt, history, user_name, live_context, client_time)
 
-    # 3. Connection safety catch
     if not reply or not reply.strip():
         reply = f"I apologize {user_name}, I ran into a network interruption. Please try sending that again."
 
     save_message(session_id, user_id, "assistant", reply, media_url)
     return reply
-
 
 # ============================================================
 # API ENDPOINTS
@@ -381,8 +361,7 @@ def get_user_threads(user_id: str):
             })
         conn.close()
         return {"threads": output}
-    except Exception as e:
-        print(f"[THREADS] Error: {e}")
+    except Exception:
         return {"threads": []}
 
 @app.get("/api/thread_messages")
@@ -390,39 +369,23 @@ def get_thread_messages(session_id: str, user_id: str = ""):
     try:
         conn = get_db()
         c = conn.cursor()
-        if user_id:
-            c.execute("""
-                SELECT role, content, timestamp, media_url
-                FROM chat_messages
-                WHERE session_id = %s AND user_id = %s
-                ORDER BY id ASC
-            """, (session_id.strip(), user_id.strip()))
-        else:
-            c.execute("""
-                SELECT role, content, timestamp, media_url
-                FROM chat_messages
-                WHERE session_id = %s
-                ORDER BY id ASC
-            """, (session_id.strip(),))
+        c.execute("""
+            SELECT role, content, timestamp, media_url
+            FROM chat_messages
+            WHERE session_id = %s AND user_id = %s
+            ORDER BY id ASC
+        """, (session_id.strip(), user_id.strip()))
         rows = c.fetchall()
         conn.close()
         return {
-            "messages": [
-                {
-                    "role": r["role"],
-                    "content": r["content"],
-                    "timestamp": r["timestamp"],
-                    "media_url": r["media_url"]
-                }
-                for r in rows
-            ]
+            "messages": [{"role": r["role"], "content": r["content"], "timestamp": r["timestamp"], "media_url": r["media_url"]} for r in rows]
         }
-    except Exception as e:
-        print(f"[THREAD_MESSAGES] Error: {e}")
+    except Exception:
         return {"messages": []}
 
 @app.post("/api/clear_threads")
 async def clear_user_threads(request: Request):
+    """Permanently purges all chat history for this specific user_id."""
     try:
         data = await request.json()
         user_id = data.get("user_id", "").strip()
@@ -444,38 +407,45 @@ async def process_command(request: Request):
         data = await request.json()
         raw_message = str(data.get("message", "")).strip()
         session_id = str(data.get("session_id", "")).strip() or f"session_{int(time.time() * 1000)}"
-        user_id = str(data.get("user_id", "")).strip() or "default_user"
-        user_name = str(data.get("user_name", "")).strip() or "Chief"
-        
-        # Pull client_time sent from the frontend JS
+        user_id = str(data.get("user_id", "")).strip() or "default_device"
+        user_name = str(data.get("user_name", "")).strip() or "friend"
         client_time = str(data.get("client_time", "")).strip()
 
         if not raw_message:
             return {"reply": "Tell me what's on your mind.", "media_url": None, "session_id": session_id}
 
-        purge_old_messages()
         lower = raw_message.lower()
 
         # Image generation detection
         wants_image = any(w in lower for w in ["show me", "picture of", "photo of", "poster of", "pic of", "image of"])
         media_url = fetch_web_image(raw_message) if wants_image else None
 
-        # Clean search query
         clean_q = re.sub(r"\b(gibbon|given|hey|hi|hello|show me|picture of|poster of)\b", "", raw_message, flags=re.IGNORECASE).strip()
         search_query = clean_q if len(clean_q) >= 2 else raw_message
 
-        # Append current calendar anchor for time-sensitive topics
-        if any(k in lower for k in ["today", "now", "current", "latest", "news", "score", "cm", "pm", "date"]):
+        # Date-sensitive keywords
+        time_keywords = [
+            "today", "yesterday", "tomorrow", "now", "current", "latest", "news", 
+            "score", "match", "vs", "won", "result", "update", "market", "stock", 
+            "price", "cm", "pm", "date", "recent", "new", "release"
+        ]
+        if any(k in lower for k in time_keywords):
             date_anchor = client_time if client_time else get_ist_now().strftime("%d %B %Y")
-            search_query = f"{search_query} {date_anchor}"
+            search_query = f"{search_query} (Searched on: {date_anchor})"
 
-        # Retrieve live context through Firecrawl for informational queries
-        conversational_greetings = {"hi", "hello", "hey", "thanks", "thank you", "ok", "okay", "bye", "good night", "good morning", "yo", "sup"}
+        # Immediate fast-path bypass for common greetings, casual expressions, and Manglish
+        fast_bypass = {
+            "hi", "hello", "hey", "thanks", "thank you", "ok", "okay", "bye", 
+            "good night", "good morning", "yo", "sup", "sugamano", "sugamane", 
+            "da", "enthokkeyundu", "entha visesham", "enna und", "evide", 
+            "how are you", "whatsup", "whats up"
+        }
+
         live_context = ""
-        if lower not in conversational_greetings and len(search_query) > 2:
+        # Search live web only when substantive factual context is required
+        if lower not in fast_bypass and len(search_query) > 3:
             live_context = search_live_web(search_query)
 
-        # Generate response passing client_time
         clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip() or raw_message
         ai_answer = ask_ai_brain(clean_prompt, session_id, user_id, user_name, live_context, media_url, client_time)
 
@@ -510,9 +480,7 @@ async def text_to_speech(text: str):
 
     return Response(content=b"", media_type="audio/mpeg")
 
-
 if __name__ == "__main__":
     import uvicorn
-    # Bound properly to the dynamic port required by Render
     port = int(os.getenv("PORT", 10000))
     uvicorn.run(app, host="0.0.0.0", port=port)
