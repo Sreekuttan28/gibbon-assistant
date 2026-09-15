@@ -2,10 +2,11 @@ import os
 import re
 import time
 import random
-import sqlite3
-import requests
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from urllib.parse import quote
-from datetime import datetime, timedelta
+
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
@@ -14,245 +15,306 @@ load_dotenv()
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
-from geopy.geocoders import Nominatim
+
 from duckduckgo_search import DDGS
-from bs4 import BeautifulSoup
 from google import genai
 from google.genai import types
 from groq import Groq
 import edge_tts
 
+
+# ============================================================
+# GIBBON // MOKUTTAN LABS
+# ============================================================
+
 app = FastAPI(title="GIBBON // MOKUTTAN LABS")
 
 MEDIA_DIR = "saved_media"
-DB_FILE = "assistant.db"
 os.makedirs(MEDIA_DIR, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v44")
 IST = ZoneInfo("Asia/Kolkata")
 
-def get_ist_now() -> datetime:
-    return datetime.now(IST)
+# ============================================================
+# DATABASE (POSTGRESQL CLOUD DATABASE)
+# ============================================================
+
+def get_db():
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise RuntimeError("DATABASE_URL environment variable is missing! Please add it to your Render environment variables.")
+    conn = psycopg2.connect(db_url, cursor_factory=RealDictCursor)
+    return conn
 
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS chat_messages (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    session_id TEXT NOT NULL,
-                    user_id TEXT NOT NULL,
-                    role TEXT NOT NULL,
-                    content TEXT NOT NULL,
-                    media_url TEXT,
-                    timestamp TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )''')
-    conn.commit()
-    conn.close()
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                id SERIAL PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                media_url TEXT,
+                timestamp TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[DB] Init error: {e}")
 
 init_db()
 
+# ============================================================
+# TIME & RETENTION
+# ============================================================
+
+def get_ist_now():
+    return datetime.now(IST)
+
+def get_utc_now():
+    return datetime.now(timezone.utc)
+
 def purge_old_messages():
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = get_db()
         c = conn.cursor()
-        fifteen_days_ago = (datetime.utcnow() - timedelta(days=15)).strftime("%Y-%m-%d %H:%M:%S")
-        c.execute("DELETE FROM chat_messages WHERE created_at < ?", (fifteen_days_ago,))
+        cutoff = (get_utc_now() - timedelta(days=15)).strftime("%Y-%m-%d %H:%M:%S")
+        c.execute("DELETE FROM chat_messages WHERE created_at < %s", (cutoff,))
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"Purge error: {e}")
+        print(f"[DB] Purge error: {e}")
 
-def save_message(session_id: str, user_id: str, role: str, content: str, media_url: str = None):
+def save_message(session_id, user_id, role, content, media_url=None):
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = get_db()
         c = conn.cursor()
-        ts = get_ist_now().strftime("%I:%M %p")
-        c.execute("INSERT INTO chat_messages (session_id, user_id, role, content, media_url, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
-                  (session_id.strip(), user_id.strip(), role, content, media_url, ts))
+        timestamp = get_ist_now().strftime("%I:%M %p")
+        c.execute(
+            """
+            INSERT INTO chat_messages (session_id, user_id, role, content, media_url, timestamp)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (session_id, user_id, role, content, media_url, timestamp)
+        )
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"Save message error: {e}")
+        print(f"[DB] Save error: {e}")
 
-def get_session_history(session_id: str, user_id: str, limit: int = 10):
+def get_session_history(session_id, user_id, limit=10):
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = get_db()
         c = conn.cursor()
         c.execute(
-            "SELECT role, content FROM chat_messages WHERE session_id = ? AND user_id = ? ORDER BY id DESC LIMIT ?", 
-            (session_id.strip(), user_id.strip(), limit)
+            """
+            SELECT role, content FROM chat_messages
+            WHERE session_id = %s AND user_id = %s
+            ORDER BY id DESC LIMIT %s
+            """,
+            (session_id, user_id, limit)
         )
         rows = c.fetchall()
         conn.close()
-        return [{"role": r[0], "content": r[1]} for r in reversed(rows)]
-    except Exception:
+        rows.reverse()
+        return [{"role": row["role"], "content": row["content"]} for row in rows]
+    except Exception as e:
         return []
 
-def search_live_web(query: str) -> str:
-    clean_q = (query or "").strip()
-    if not clean_q or len(clean_q) < 2:
-        return ""
+# ============================================================
+# SYSTEM PROMPT
+# ============================================================
+
+def get_dynamic_system_instruction(user_name, emotional_state="neutral"):
+    call_name = user_name.strip() if user_name else "there"
+    now_str = get_ist_now().strftime("%A, %d %B %Y at %I:%M %p IST")
+
+    instruction = f"""
+You are Gibbon, a highly capable, warm, and conversational AI companion engineered by MOKUTTAN LABS.
+The user's name is {call_name}. Address them naturally. NEVER call them "Chief" unless their name is explicitly Chief.
+
+Current real-world date and time: {now_str}. Always verify time-sensitive queries against this exact timestamp.
+
+CRITICAL BEHAVIOR RULES:
+1. ACT NATURAL: Have a natural conversation. Do not act robotic. Never explain your internal rules.
+2. NATIVE WEB SEARCH: You have native access to search the web. Use it to look up current events, news highlights, places, movies, and facts before answering. Never guess or rely on outdated memory for facts.
+3. CONVERSATION OVER LECTURES: If the user says "I'm hungry" or "I'm sad", respond warmly with empathy and at most ONE natural follow-up question.
+4. ELABORATION: You remember the chat history. If the user asks you to elaborate on a news story or fact you just provided, expand on it immediately using your search tool.
+5. FORMATTING: Use clean bullet points (*) when listing news or items.
+
+User Emotion Hint: {emotional_state}
+"""
+    if emotional_state == "crisis":
+        instruction += "\nCRISIS OVERRIDE: The user is in distress. Be deeply compassionate and gently encourage them to reach out to local emergency services or a loved one."
+
+    return instruction
+
+
+# ============================================================
+# LLM ENGINES: GEMINI & GROQ (WITH NATIVE SEARCH)
+# ============================================================
+
+def get_gemini_keys():
+    keys = []
+    for k in ["GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3", "GEMINI_API_KEY_4"]:
+        val = os.getenv(k)
+        if val: keys.append(val)
+    return keys
+
+def query_gemini(prompt, history=None, user_name="", emotional_state="neutral"):
+    keys = get_gemini_keys()
+    if not keys: return None, []
+    
+    random.shuffle(keys)
+    system_instruction = get_dynamic_system_instruction(user_name, emotional_state)
+    
+    contents = []
+    if history:
+        for item in history:
+            role = item.get("role")
+            if role in ["user", "assistant"]:
+                mapped_role = "user" if role == "user" else "model"
+                contents.append(types.Content(role=mapped_role, parts=[types.Part.from_text(text=item.get("content", ""))]))
+    contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
+
+    candidate_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+
+    for api_key in keys:
+        try:
+            client = genai.Client(api_key=api_key)
+            for model_name in candidate_models:
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=contents,
+                        config=types.GenerateContentConfig(
+                            system_instruction=system_instruction,
+                            tools=[{"google_search": {}}],  # Native Google Search Built-In
+                            temperature=0.25
+                        )
+                    )
+                    answer = getattr(response, "text", None)
+                    if answer and answer.strip():
+                        sources = extract_gemini_sources(response)
+                        return answer.strip(), sources
+                except Exception as e:
+                    print(f"[GEMINI] {model_name} error: {e}")
+                    continue
+        except Exception as e:
+            continue
+    return None, []
+
+def extract_gemini_sources(response):
+    sources = []
+    try:
+        candidates = getattr(response, "candidates", [])
+        if not candidates: return sources
+        metadata = getattr(candidates[0], "grounding_metadata", None)
+        if not metadata: return sources
+        chunks = getattr(metadata, "grounding_chunks", [])
+        for chunk in chunks:
+            web = getattr(chunk, "web", None)
+            if not web: continue
+            uri = getattr(web, "uri", None)
+            title = getattr(web, "title", None)
+            if uri: sources.append({"title": title or uri, "url": uri})
+    except Exception:
+        pass
+    
+    unique = []
+    seen = set()
+    for s in sources:
+        url = s.get("url")
+        if url and url not in seen:
+            seen.add(url)
+            unique.append(s)
+    return unique[:8]
+
+def query_groq(prompt, history=None, user_name="", emotional_state="neutral"):
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key: return None, []
 
     try:
-        with DDGS() as ddgs:
-            # Region locked to India for highly accurate local news/politics
-            results = list(ddgs.text(clean_q, region="in-en", max_results=5))
-            if results:
-                return "\n".join([f"- {r.get('title', '')}: {r.get('body', '')}" for r in results])
-    except Exception as e:
-        print(f"DuckDuckGo search error: {e}")
-    return ""
+        client = Groq(api_key=api_key)
+        system_instruction = get_dynamic_system_instruction(user_name, emotional_state)
+        messages = [{"role": "system", "content": system_instruction}]
+        
+        if history:
+            for item in history:
+                if item.get("role") in ["user", "assistant"]:
+                    messages.append({"role": item.get("role"), "content": item.get("content", "")})
+        messages.append({"role": "user", "content": prompt})
 
-def fetch_web_image(query: str) -> str:
+        # Using Groq's new Compound models for Native Web Search
+        for model_name in ["groq/compound-mini", "groq/compound"]:
+            try:
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=messages,
+                    temperature=0.25,
+                    max_tokens=2000,
+                )
+                answer = response.choices[0].message.content
+                if answer: return answer.strip(), []
+            except Exception as e:
+                print(f"[GROQ] {model_name} error: {e}")
+                continue
+    except Exception:
+        return None, []
+    return None, []
+
+def ask_ai_brain(user_message, session_id, user_id, user_name="", history=None, emotional_state="neutral"):
+    save_message(session_id, user_id, "user", user_message)
+
+    # 1. Try Gemini Native Search First
+    answer, sources = query_gemini(user_message, history, user_name, emotional_state)
+
+    # 2. If Gemini fails, fallback to Groq Native Search
+    if not answer:
+        answer, sources = query_groq(user_message, history, user_name, emotional_state)
+
+    # 3. Ultimate Fallback
+    if not answer or not answer.strip():
+        answer = "I'm having a little trouble connecting to my network right now! Could you repeat that?"
+
+    save_message(session_id, user_id, "assistant", answer)
+    return answer, sources
+
+def detect_emotional_state(text):
+    if not text: return "neutral"
+    lower = text.lower()
+    if any(x in lower for x in ["suicide", "kill myself", "want to die", "self harm"]): return "crisis"
+    if any(x in lower for x in ["depressed", "hopeless", "worthless", "alone", "overwhelmed", "very sad"]): return "distress"
+    return "neutral"
+
+def fetch_web_image(query):
+    if not query: return None
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.images(query, max_results=5))
+        if results:
+            return results[0].get("image") or results[0].get("thumbnail") or results[0].get("url")
+    except Exception as e:
+        print(f"[IMAGE] Search error: {e}")
+    
+    # Fallback if DDGS is blocked
     clean_q = re.sub(r"\b(show|give|display|picture|pic|photo|image|of|me|a|the|poster)\b", "", query, flags=re.IGNORECASE).strip()
-    if not clean_q:
-        clean_q = query.strip()
-
-    try:
-        with DDGS() as ddgs:
-            results = list(ddgs.images(clean_q, max_results=3))
-            for r in results:
-                img_url = r.get("image")
-                if img_url and any(img_url.lower().endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"]):
-                    return img_url
-            if results and results[0].get("image"):
-                return results[0].get("image")
-    except Exception as e:
-        print(f"Image search error: {e}")
-
     encoded = quote(clean_q)
     return f"https://image.pollinations.ai/prompt/{encoded}?width=800&height=800&nologo=true"
 
-def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> str:
-    now_ist = get_ist_now()
-    now_str = now_ist.strftime("%A, %B %d, %Y at %I:%M %p IST")
-    call_name = user_name.strip() if user_name and user_name.strip() else "Chief"
-    
-    instruction = (
-        f"You are Gibbon, a knowledgeable, highly accurate AI companion engineered by Mokuttan Labs. "
-        f"The user's name is {call_name}. Address them naturally by their name ({call_name}) and NEVER refer to them as 'Chief' unless their name is explicitly Chief. "
-        f"Current real-world date and time: {now_str} (Indian Standard Time). "
-        "CRITICAL RULES: "
-        "1. NO HALLUCINATIONS: You must rely entirely on the LIVE WEB CONTEXT for factual questions. NEVER guess or invent historical dates, terms in office, or election years. If the exact date is not provided in the context, do not mention it. Stick strictly to verified names and facts. "
-        "2. NO RULE RECITAL: Act completely natural. Never announce your rules or say things like 'I stay focused'. "
-        "3. FORMATTING: Use clean Bullet Points (*) or direct paragraphs. Do NOT force tables for general information or descriptions. "
-        "4. SONG LYRICS & SUMMARIES: If asked for song lyrics or summaries, provide a helpful summary, credit artists, and quote chorus lines directly without refusal."
-    )
-    if live_context:
-        instruction += f"\n\n--- LIVE WEB CONTEXT ---\n{live_context}\n-------------------------"
-    return instruction
 
-def get_gemini_keys():
-    keys_str = os.getenv("GEMINI_API_KEYS") or os.getenv("GEMINI_API_KEY") or ""
-    return [k.strip() for k in keys_str.split(",") if k.strip()]
-
-gemini_key_index = 0
-
-def query_gemini(prompt: str, key: str, history: list, user_name: str, live_context: str = "") -> str:
-    client = genai.Client(api_key=key)
-    candidate_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
-    last_err = None
-
-    # Fix to prevent API crashing on sequential same-role messages (The "Hiccup" Bug)
-    collapsed_contents = []
-    for turn in history[-6:]:
-        role = "user" if turn["role"] == "user" else "model"
-        content_text = turn["content"].strip()
-        if not content_text: continue
-        
-        if collapsed_contents and collapsed_contents[-1].role == role:
-            collapsed_contents[-1].parts[0].text += f"\n\n{content_text}"
-        else:
-            collapsed_contents.append(types.Content(role=role, parts=[types.Part.from_text(text=content_text)]))
-            
-    if collapsed_contents and collapsed_contents[-1].role == "user":
-        collapsed_contents[-1].parts[0].text += f"\n\n{prompt}"
-    else:
-        collapsed_contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
-
-    for m in candidate_models:
-        try:
-            response = client.models.generate_content(
-                model=m,
-                contents=collapsed_contents,
-                config=types.GenerateContentConfig(
-                    system_instruction=get_dynamic_system_instruction(user_name, live_context),
-                    tools=[{"google_search": {}}],
-                    temperature=0.15 # Lowered heavily to prevent date hallucination
-                )
-            )
-            if response and response.text:
-                return response.text.strip()
-        except Exception as e:
-            last_err = e
-            continue
-
-    raise last_err or RuntimeError("Gemini engines failed.")
-
-def query_groq(prompt: str, history: list, user_name: str, live_context: str = "") -> str:
-    groq_key = os.getenv("GROQ_API_KEY")
-    if not groq_key:
-        raise RuntimeError("GROQ_API_KEY not configured.")
-
-    client = Groq(api_key=groq_key)
-    messages = [{"role": "system", "content": get_dynamic_system_instruction(user_name, live_context)}]
-    for turn in history[-6:]:
-        messages.append({"role": turn["role"], "content": turn["content"]})
-    messages.append({"role": "user", "content": prompt})
-
-    candidate_groq_models = ["openai/gpt-oss-20b", "llama-3.1-8b-instant"]
-    for model_name in candidate_groq_models:
-        try:
-            chat_completion = client.chat.completions.create(
-                messages=messages,
-                model=model_name,
-                temperature=0.15, # Lowered to prevent hallucination
-                max_tokens=950
-            )
-            return chat_completion.choices[0].message.content.strip()
-        except Exception:
-            continue
-    raise RuntimeError("All Groq models failed.")
-
-def ask_ai_brain(prompt: str, session_id: str, user_id: str, user_name: str, live_context: str = "", media_url: str = None) -> str:
-    global gemini_key_index
-    gemini_keys = get_gemini_keys()
-    history = get_session_history(session_id, user_id)
-
-    save_message(session_id, user_id, "user", prompt)
-
-    if gemini_keys:
-        for _ in range(len(gemini_keys)):
-            current_key = gemini_keys[gemini_key_index]
-            try:
-                reply = query_gemini(prompt, current_key, history, user_name, live_context)
-                if reply:
-                    save_message(session_id, user_id, "assistant", reply, media_url)
-                    return reply
-            except Exception as e:
-                print(f"[Gemini Error on Key {gemini_key_index + 1}]: {e}")
-                gemini_key_index = (gemini_key_index + 1) % len(gemini_keys)
-
-    if os.getenv("GROQ_API_KEY"):
-        try:
-            if not live_context:
-                clean_q = re.sub(r"\b(gibbon|given|hey|hi)\b", "", prompt, flags=re.IGNORECASE).strip()
-                live_context = search_live_web(clean_q or prompt)
-
-            reply = query_groq(prompt, history, user_name, live_context)
-            if reply:
-                save_message(session_id, user_id, "assistant", reply, media_url)
-                return reply
-        except Exception as e:
-            print(f"[Groq Failover Error]: {e}")
-
-    fallback = f"I apologize {user_name}, connection is busy right now. Please try again."
-    save_message(session_id, user_id, "assistant", fallback, media_url)
-    return fallback
+# ============================================================
+# API ROUTES
+# ============================================================
 
 @app.get("/")
 def serve_index():
@@ -261,106 +323,135 @@ def serve_index():
 
 @app.get("/api/threads")
 def get_user_threads(user_id: str):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("""
-        SELECT session_id, content, timestamp 
-        FROM chat_messages 
-        WHERE user_id = ? AND role = 'user' 
-        GROUP BY session_id 
-        ORDER BY id DESC LIMIT 50
-    """, (user_id.strip(),))
-    rows = c.fetchall()
-    conn.close()
-    return {"threads": [{"session_id": r[0], "title": r[1][:42], "time": r[2]} for r in rows]}
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("""
+            SELECT session_id, MAX(id) AS latest_id
+            FROM chat_messages WHERE user_id = %s
+            GROUP BY session_id ORDER BY latest_id DESC LIMIT 50
+        """, (user_id,))
+        thread_rows = c.fetchall()
+        
+        output = []
+        for row in thread_rows:
+            sid = row["session_id"]
+            c.execute("""
+                SELECT content, timestamp FROM chat_messages
+                WHERE user_id = %s AND session_id = %s AND role = 'user'
+                ORDER BY id ASC LIMIT 1
+            """, (user_id, sid))
+            first = c.fetchone()
+            output.append({
+                "session_id": sid,
+                "content": first["content"] if first else "New conversation",
+                "timestamp": first["timestamp"] if first else ""
+            })
+        conn.close()
+        return {"threads": output}
+    except Exception as e:
+        return {"threads": []}
 
 @app.get("/api/thread_messages")
-def get_thread_messages(session_id: str):
-    clean_id = session_id.strip()
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("SELECT role, content, timestamp, media_url FROM chat_messages WHERE session_id = ? ORDER BY id ASC", (clean_id,))
-    rows = c.fetchall()
-    conn.close()
-    return {"messages": [{"role": r[0], "content": r[1], "timestamp": r[2], "media_url": r[3]} for r in rows]}
+def get_thread_messages(session_id: str, user_id: str):
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("""
+            SELECT role, content, timestamp, media_url
+            FROM chat_messages WHERE session_id = %s AND user_id = %s ORDER BY id ASC
+        """, (session_id, user_id))
+        rows = c.fetchall()
+        conn.close()
+        return {"messages": [{"role": r["role"], "content": r["content"], "timestamp": r["timestamp"], "media_url": r["media_url"]} for r in rows]}
+    except Exception as e:
+        return {"messages": []}
 
 @app.post("/api/clear_threads")
 async def clear_user_threads(request: Request):
-    data = await request.json()
-    user_id = data.get("user_id", "").strip()
-    if user_id:
-        conn = sqlite3.connect(DB_FILE)
+    try:
+        data = await request.json()
+        user_id = data.get("user_id")
+        if not user_id: return {"success": False, "error": "user_id required"}
+        
+        conn = get_db()
         c = conn.cursor()
-        c.execute("DELETE FROM chat_messages WHERE user_id = ?", (user_id,))
+        c.execute("DELETE FROM chat_messages WHERE user_id = %s", (user_id,))
+        deleted = c.rowcount
         conn.commit()
         conn.close()
-    return {"status": "cleared"}
+        return {"success": True, "deleted": deleted}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 @app.post("/api/chat")
 async def process_command(request: Request):
-    data = await request.json()
-    raw_message = data.get("message", "").strip()
-    session_id = data.get("session_id", "default_session").strip()
-    user_id = data.get("user_id", "default_user").strip()
-    user_name = data.get("user_name", "Chief").strip() or "Chief"
-    lower = raw_message.lower()
+    try:
+        data = await request.json()
+        raw_message = str(data.get("message", "")).strip()
+        session_id = str(data.get("session_id", "")).strip()
+        user_id = str(data.get("user_id", "")).strip()
+        user_name = str(data.get("user_name", "")).strip()
 
-    wants_image = any(w in lower for w in ["show me", "picture of", "photo of", "poster of", "pic of", "image of"])
-    media_url = None
-    if wants_image:
-        media_url = fetch_web_image(raw_message)
+        if not raw_message: return {"reply": "Tell me what's on your mind.", "media_url": None, "sources": []}
+        if not session_id: session_id = f"session_{int(time.time() * 1000)}"
+        if not user_id: user_id = "default_user"
 
-    history = get_session_history(session_id, user_id, limit=4)
-    search_query = re.sub(r"\b(gibbon|given|hey|hi|hello|show me|picture of|poster of)\b", "", raw_message, flags=re.IGNORECASE).strip()
-    final_search_query = search_query if len(search_query) >= 2 else raw_message.strip()
+        purge_old_messages()
+        emotional_state = detect_emotional_state(raw_message)
+        history = get_session_history(session_id=session_id, user_id=user_id, limit=8)
 
-    if len(final_search_query.split()) <= 3 and history:
-        last_user_turn = next((t["content"] for t in reversed(history) if t["role"] == "user"), "")
-        if last_user_turn and last_user_turn.lower() != raw_message.lower():
-            final_search_query = f"{last_user_turn} {final_search_query}"
+        answer, sources = ask_ai_brain(
+            user_message=raw_message,
+            session_id=session_id,
+            user_id=user_id,
+            user_name=user_name,
+            history=history,
+            emotional_state=emotional_state,
+        )
 
-    if any(k in lower for k in ["today", "holiday", "festival", "speciality", "specialty", "date"]):
-        current_date_query = get_ist_now().strftime("%B %Y")
-        final_search_query = f"{raw_message} {current_date_query} India"
+        media_url = None
+        lower = raw_message.lower()
+        if any(phrase in lower for phrase in ["show me an image", "show image", "find an image", "picture of", "photo of"]):
+            media_url = fetch_web_image(raw_message)
+            if media_url:
+                try:
+                    conn = get_db()
+                    c = conn.cursor()
+                    c.execute("""
+                        UPDATE chat_messages SET media_url = %s
+                        WHERE id = (SELECT MAX(id) FROM chat_messages WHERE session_id = %s AND user_id = %s AND role = 'assistant')
+                    """, (media_url, session_id, user_id))
+                    conn.commit()
+                    conn.close()
+                except Exception:
+                    pass
 
-    if any(k in lower for k in ["parashini", "parassini", "parassinikkadavu"]):
-        final_search_query += " Kannur Kerala Muthappan temple"
+        return {"reply": answer, "media_url": media_url, "sources": sources, "session_id": session_id}
 
-    needs_search = any(w in lower for w in [
-        "today", "holiday", "festival", "speciality", "specialty", "date", "who", "what",
-        "parashini", "parassini", "kannur", "kasaragod", "athiradi", 
-        "places", "tourist", "visit", "famous", "temple", "latest", "movie", "song", "cm", "pm"
-    ])
-    
-    live_context = ""
-    if needs_search and len(final_search_query) > 2:
-        live_context = search_live_web(final_search_query)
-
-    clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
-    ai_answer = ask_ai_brain(clean_prompt or raw_message, session_id, user_id, user_name, live_context, media_url)
-    return {"reply": ai_answer, "media_url": media_url}
+    except Exception:
+        return {"reply": "Something went wrong while processing that. Please try again.", "media_url": None, "sources": []}
 
 @app.get("/api/tts")
 async def text_to_speech(text: str):
-    clean_text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
-    clean_text = re.sub(r'[*#_`|~>—–-]', ' ', clean_text)
-    clean_text = re.sub(r'\s+', ' ', clean_text).strip()[:4000]
+    clean_text = re.sub(r"\[[0-9]+\]", "", text or "")
+    clean_text = re.sub(r"https?://\S+", "", clean_text).strip()
+    if not clean_text:
+        return Response(content=b"", media_type="audio/mpeg")
 
     candidate_voices = ["en-IN-NeerjaNeural", "en-IN-PrabhatNeural"]
-    audio_data = bytearray()
-
-    for v in candidate_voices:
+    for voice in candidate_voices:
         try:
-            communicate = edge_tts.Communicate(clean_text, voice=v, rate="+1%", pitch="+2Hz")
-            audio_data.clear()
+            audio_data = bytearray()
+            communicate = edge_tts.Communicate(clean_text, voice)
             async for chunk in communicate.stream():
                 if chunk["type"] == "audio":
                     audio_data.extend(chunk["data"])
-            if len(audio_data) > 0:
-                break
+            if audio_data:
+                return Response(content=bytes(audio_data), media_type="audio/mpeg")
         except Exception:
             continue
-    return Response(content=bytes(audio_data), media_type="audio/mpeg")
+    return Response(content=b"", media_type="audio/mpeg")
 
 if __name__ == "__main__":
     import uvicorn
