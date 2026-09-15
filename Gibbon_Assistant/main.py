@@ -679,6 +679,45 @@ async def process_command(request: Request):
         print(f"[CHAT] Handler exception: {e}")
         return {"reply": "An error occurred while processing your request. Please try again.", "media_url": None}
 
+@app.get("/api/debug_search")
+def debug_search(q: str):
+    """
+    Diagnostic endpoint — hit this directly in your browser as:
+    https://your-render-url.onrender.com/api/debug_search?q=who is the CM of Karnataka
+
+    Shows exactly which search tier (if any) is returning data, and which
+    keys are configured, without needing to go through the chat flow.
+    REMOVE THIS ENDPOINT before going to production — it's for setup only.
+    """
+    targeted_query = _anchor_query(q)
+    keys_configured = {
+        "BRAVE_API_KEY": bool(os.getenv("BRAVE_API_KEY")),
+        "TAVILY_API_KEY": bool(os.getenv("TAVILY_API_KEY")),
+        "SERPER_API_KEY": bool(os.getenv("SERPER_API_KEY")),
+        "FIRECRAWL_API_KEY": bool(os.getenv("FIRECRAWL_API_KEY")),
+    }
+
+    results = {}
+    for name, engine in [
+        ("brave", _search_brave),
+        ("tavily", _search_tavily),
+        ("serper", _search_serper),
+        ("firecrawl", _search_firecrawl),
+        ("ddgs", _search_ddgs),
+    ]:
+        try:
+            out = engine(targeted_query)
+            results[name] = {"status": "OK - got data" if out else "ran, but empty result", "preview": out[:300] if out else ""}
+        except Exception as e:
+            results[name] = {"status": f"EXCEPTION: {e}", "preview": ""}
+
+    return {
+        "query_sent": targeted_query,
+        "keys_configured": keys_configured,
+        "engine_results": results,
+        "final_live_context_used_by_chat": search_live_web(q),
+    }
+
 @app.get("/api/tts")
 async def text_to_speech(text: str):
     clean_text = re.sub(r'```.*?```', '', text or "", flags=re.DOTALL)
