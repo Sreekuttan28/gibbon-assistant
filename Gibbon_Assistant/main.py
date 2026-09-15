@@ -236,17 +236,37 @@ def _search_firecrawl(query: str) -> str:
         resp = requests.post(
             "https://api.firecrawl.dev/v1/search",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-            json={"query": query, "limit": 3, "scrapeOptions": {"formats": ["markdown"]}},
-            timeout=7,
+            # No scrapeOptions here on purpose: asking Firecrawl to scrape full markdown
+            # for every result is slower, costs more credits, and is more likely to time
+            # out or partially fail. Plain search results (title/url/description) are
+            # enough context for the model and cost far fewer credits (2 per 10 results).
+            json={"query": query, "limit": 5},
+            timeout=8,
         )
         if resp.status_code != 200:
+            # Log the *actual* reason instead of silently returning "" — this is what
+            # was hiding the real problem before. Check your Render logs after a
+            # request to see this line.
+            print(f"[SEARCH] Firecrawl HTTP {resp.status_code}: {resp.text[:500]}")
             return ""
+
         data = resp.json()
-        results = data.get("data", []) if isinstance(data, dict) else []
+        if not isinstance(data, dict):
+            print(f"[SEARCH] Firecrawl unexpected response shape: {type(data)}")
+            return ""
+        if data.get("success") is False:
+            print(f"[SEARCH] Firecrawl reported failure: {data.get('error') or data.get('warning')}")
+            return ""
+
+        results = data.get("data", [])
+        if not results:
+            print(f"[SEARCH] Firecrawl returned 200 but no results for query: {query}")
+            return ""
+
         blocks = []
         for item in results:
             title = item.get("title", "No Title")
-            content = item.get("markdown") or item.get("description", "")
+            content = item.get("markdown") or item.get("description", "") or ""
             clean_content = content.replace("\n", " ").strip()[:900]
             if clean_content:
                 blocks.append(f"- {title}: {clean_content}")
@@ -705,6 +725,26 @@ def debug_search(q: str):
         ("firecrawl", _search_firecrawl),
         ("ddgs", _search_ddgs),
     ]:
+        if name == "firecrawl":
+            # Run raw to capture the actual HTTP status/error, not just empty-vs-not.
+            key = os.getenv("FIRECRAWL_API_KEY")
+            if not key:
+                results[name] = {"status": "no key configured", "preview": ""}
+                continue
+            try:
+                raw = requests.post(
+                    "https://api.firecrawl.dev/v1/search",
+                    headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                    json={"query": targeted_query, "limit": 5},
+                    timeout=8,
+                )
+                results[name] = {
+                    "status": f"HTTP {raw.status_code}",
+                    "preview": raw.text[:500],
+                }
+            except Exception as e:
+                results[name] = {"status": f"EXCEPTION: {e}", "preview": ""}
+            continue
         try:
             out = engine(targeted_query)
             results[name] = {"status": "OK - got data" if out else "ran, but empty result", "preview": out[:300] if out else ""}
