@@ -236,9 +236,9 @@ def query_gemini(prompt: str, history: list, user_name: str, live_context: str =
     global gemini_key_index
     keys = get_gemini_keys()
     if not keys:
+        print("[GEMINI] No API keys configured.")
         return ""
 
-    # Message Role Collapser: Prevents Gemini API 400 error on consecutive identical roles
     collapsed_contents = []
     for turn in history[-6:]:
         role = "user" if turn["role"] == "user" else "model"
@@ -256,7 +256,9 @@ def query_gemini(prompt: str, history: list, user_name: str, live_context: str =
         collapsed_contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
 
     system_instruction = get_dynamic_system_instruction(user_name, live_context)
-    candidate_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    
+    # Updated to the required 2026 models based on your logs
+    candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
 
     for _ in range(len(keys)):
         active_key = keys[gemini_key_index]
@@ -286,6 +288,7 @@ def query_gemini(prompt: str, history: list, user_name: str, live_context: str =
 def query_groq(prompt: str, history: list, user_name: str, live_context: str = "") -> str:
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
+        print("[GROQ] GROQ_API_KEY is not set.")
         return ""
 
     try:
@@ -309,10 +312,11 @@ def query_groq(prompt: str, history: list, user_name: str, live_context: str = "
                 )
                 if resp.choices[0].message.content:
                     return resp.choices[0].message.content.strip()
-            except Exception:
+            except Exception as e:
+                print(f"[GROQ] Model {m} error: {e}")
                 continue
     except Exception as e:
-        print(f"[GROQ] Failover exception: {e}")
+        print(f"[GROQ] Client error: {e}")
 
     return ""
 
@@ -504,4 +508,6 @@ async def text_to_speech(text: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Bound properly to the dynamic port required by Render
+    port = int(os.getenv("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
