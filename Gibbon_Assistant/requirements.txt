@@ -8,3 +8,4 @@ beautifulsoup4
 google-genai
 groq
 edge-tts
+psycopg2-binary
