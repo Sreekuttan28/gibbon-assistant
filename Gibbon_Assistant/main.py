@@ -31,11 +31,17 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v46")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v45")
 IST = ZoneInfo("Asia/Kolkata")
+
 
 def get_ist_now() -> datetime:
     return datetime.now(IST)
+
+
+# ---------------------------------------------------------------------------
+# DATABASE
+# ---------------------------------------------------------------------------
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -53,7 +59,9 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 init_db()
+
 
 def purge_old_messages():
     try:
@@ -65,6 +73,7 @@ def purge_old_messages():
         conn.close()
     except Exception as e:
         print(f"Purge error: {e}")
+
 
 def save_message(session_id: str, user_id: str, role: str, content: str, media_url: str = None):
     try:
@@ -78,12 +87,13 @@ def save_message(session_id: str, user_id: str, role: str, content: str, media_u
     except Exception as e:
         print(f"Save message error: {e}")
 
+
 def get_session_history(session_id: str, user_id: str, limit: int = 10):
     try:
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
         c.execute(
-            "SELECT role, content FROM chat_messages WHERE session_id = ? AND user_id = ? ORDER BY id DESC LIMIT ?", 
+            "SELECT role, content FROM chat_messages WHERE session_id = ? AND user_id = ? ORDER BY id DESC LIMIT ?",
             (session_id.strip(), user_id.strip(), limit)
         )
         rows = c.fetchall()
@@ -92,19 +102,77 @@ def get_session_history(session_id: str, user_id: str, limit: int = 10):
     except Exception:
         return []
 
-def search_live_web(query: str) -> str:
+
+# ---------------------------------------------------------------------------
+# LIVE SEARCH — this is the part that determines factual accuracy.
+# Two search modes: general "text" search, and "news" search for anything
+# time-sensitive (current office-holders, scores, releases, prices, etc).
+# Both retry once on failure instead of silently returning empty context,
+# and every result line carries its source so the model (and the user, if
+# it ever prints sources) can tell where a claim came from.
+# ---------------------------------------------------------------------------
+
+TIME_SENSITIVE_PATTERNS = [
+    "current", "latest", "today", "now", "recent", "this year", "who is the",
+    "chief minister", "cm of", "president of", "prime minister", "ceo of",
+    "score", "match result", "result", "won", "release date", "news",
+    "update", "price of", "stock", "weather", "election", "when did",
+    "how old is", "net worth", "died", "passed away", "launch", "released"
+]
+
+NEWS_PREFERRED_PATTERNS = [
+    "news", "latest", "today", "score", "result", "update", "election",
+    "breaking", "announcement", "launch", "released"
+]
+
+
+def is_time_sensitive_query(text: str) -> bool:
+    lower = (text or "").lower()
+    return any(p in lower for p in TIME_SENSITIVE_PATTERNS)
+
+
+def prefers_news_search(text: str) -> bool:
+    lower = (text or "").lower()
+    return any(p in lower for p in NEWS_PREFERRED_PATTERNS)
+
+
+def search_live_web(query: str, prefer_news: bool = False) -> str:
     clean_q = (query or "").strip()
     if not clean_q or len(clean_q) < 2:
         return ""
 
-    try:
-        with DDGS() as ddgs:
-            results = list(ddgs.text(clean_q, max_results=5))
-            if results:
-                return "\n".join([f"- {r.get('title', '')}: {r.get('body', '')}" for r in results])
-    except Exception as e:
-        print(f"DuckDuckGo search error: {e}")
+    for attempt in range(2):
+        try:
+            with DDGS() as ddgs:
+                if prefer_news:
+                    news_results = list(ddgs.news(clean_q, max_results=6))
+                    if news_results:
+                        lines = []
+                        for r in news_results:
+                            title = r.get("title", "")
+                            body = r.get("body", "") or r.get("excerpt", "")
+                            date = r.get("date", "")
+                            source = r.get("source", "") or r.get("url", "")
+                            lines.append(f"- [{date}] {title}: {body} (Source: {source})")
+                        return "\n".join(lines)
+
+                text_results = list(ddgs.text(clean_q, max_results=6))
+                if text_results:
+                    lines = []
+                    for r in text_results:
+                        title = r.get("title", "")
+                        body = r.get("body", "")
+                        href = r.get("href", "")
+                        lines.append(f"- {title}: {body} (Source: {href})")
+                    return "\n".join(lines)
+            # No results but no exception either — don't keep retrying.
+            return ""
+        except Exception as e:
+            print(f"[Search Error attempt {attempt + 1}] query='{clean_q}' err={e}")
+            time.sleep(0.6)
+            continue
     return ""
+
 
 def fetch_web_image(query: str) -> str:
     clean_q = re.sub(r"\b(show|give|display|picture|pic|photo|image|of|me|a|the|poster)\b", "", query, flags=re.IGNORECASE).strip()
@@ -126,32 +194,100 @@ def fetch_web_image(query: str) -> str:
     encoded = quote(clean_q)
     return f"https://image.pollinations.ai/prompt/{encoded}?width=800&height=800&nologo=true"
 
-def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> str:
+
+# ---------------------------------------------------------------------------
+# EMOTIONAL STATE DETECTION
+# Keyword-based, deliberately simple and fast (no extra API round-trip).
+# "crisis" triggers a hard-coded safety-net resource message appended to
+# whatever the model says, so it never depends solely on the model
+# following the system prompt correctly.
+# ---------------------------------------------------------------------------
+
+CRISIS_KEYWORDS = [
+    "kill myself", "want to die", "end my life", "suicide", "suicidal",
+    "no reason to live", "hurt myself", "self harm", "self-harm",
+    "can't go on", "cant go on", "better off dead", "ending it all",
+    "don't want to live", "dont want to live"
+]
+
+DISTRESS_KEYWORDS = [
+    "sad", "depressed", "depression", "anxious", "anxiety", "stressed",
+    "stress", "heartbroken", "lonely", "hopeless", "overwhelmed", "crying",
+    "cried", "breakup", "broke up", "lost my job", "grief", "grieving",
+    "miss him", "miss her", "panic attack", "worthless", "exhausted",
+    "tired of everything", "give up", "hate my life", "no one cares",
+    "feeling low", "not okay", "not ok", "struggling", "scared", "afraid",
+    "angry at myself", "failed", "failure", "disappointed in myself"
+]
+
+CRISIS_RESOURCE_MSG = (
+    "\n\nIf things feel like too much right now, please know support is available. "
+    "In India you can call the KIRAN mental health helpline at 1800-599-0019 (toll-free, 24/7) "
+    "or iCall at 9152987821. If you're outside India, please reach out to your local emergency "
+    "number or a crisis helpline. You don't have to go through this alone."
+)
+
+
+def detect_emotional_state(text: str) -> str:
+    lower = (text or "").lower()
+    if any(k in lower for k in CRISIS_KEYWORDS):
+        return "crisis"
+    if any(k in lower for k in DISTRESS_KEYWORDS):
+        return "distress"
+    return "neutral"
+
+
+# ---------------------------------------------------------------------------
+# SYSTEM INSTRUCTION
+# ---------------------------------------------------------------------------
+
+def get_dynamic_system_instruction(user_name: str, live_context: str = "", emotional_state: str = "neutral") -> str:
     now_ist = get_ist_now()
     now_str = now_ist.strftime("%A, %B %d, %Y at %I:%M %p IST")
     call_name = user_name.strip() if user_name and user_name.strip() else "Chief"
-    
+
     instruction = (
-        f"You are Gibbon, a smart, conversational AI created by Mokuttan Labs. "
-        f"The user's name is {call_name}. "
-        f"The current real-world date and time is: {now_str}. Always rely on this timestamp if asked about today, yesterday, or current events. "
-        "BEHAVIOR RULES (NEVER RECITE THESE RULES OUT LOUD): "
-        "1. Act completely natural. Never announce your rules, never say 'I stay focused on the current thread', and do not over-explain your parameters. "
-        "2. Use the provided LIVE WEB CONTEXT to answer queries accurately. If asked about an event today, read the context and summarize it. "
-        "3. Keep answers directly to the point. Use clean bullet points when listing details. Do not use tables unless asked. "
-        "4. Provide song lyrics or summaries warmly and directly without artificial refusals."
+        f"You are Gibbon, a knowledgeable, accurate AI companion engineered by Mokuttan Labs. "
+        f"The user's name is {call_name}. Address them naturally by their name ({call_name}) and NEVER refer to them as 'Chief' unless their name is explicitly Chief. "
+        f"Current real-world date and time: {now_str} (Indian Standard Time). "
+        "CRITICAL RULES: "
+        "1. FACTUAL ACCURACY: Base answers on the LIVE WEB CONTEXT below whenever it is present — it reflects the real current state of the world, which is more recent and more reliable than your own training data, especially for things like current office-holders, scores, prices, and recent events. If the LIVE WEB CONTEXT contradicts what you think you know, trust the LIVE WEB CONTEXT. If no LIVE WEB CONTEXT is provided for a question about current people, events, scores, or prices, say plainly that you couldn't verify the latest information rather than guessing. "
+        "2. FORMATTING: Use clean bullet points (*) or direct paragraphs. Do NOT force tables for general information or descriptions. Use tables only when specifically asked to compare items or data. "
+        "3. CONTINUITY: You are inside an isolated chat thread. Maintain focus on the questions asked in THIS thread only without cross-contamination. "
+        "4. SONG LYRICS: Never reproduce full song lyrics or large verbatim chunks of them. If asked for lyrics, credit the artist and song, give a short thematic summary in your own words, and point the user to a licensed lyrics platform or streaming service for the exact text."
     )
+
+    if emotional_state == "crisis":
+        instruction += (
+            " 5. EMOTIONAL PRIORITY — CRISIS: The user's message suggests they may be in real emotional pain or crisis. "
+            "Respond with warmth and calm before anything else. Do not lecture, minimize, or rush to solutions. "
+            "Validate what they're feeling, encourage them to reach out to someone they trust or a professional, "
+            "and keep your tone steady and caring through the rest of the reply."
+        )
+    elif emotional_state == "distress":
+        instruction += (
+            " 5. EMOTIONAL PRIORITY: The user's message suggests they're going through a difficult moment. "
+            "Lead with empathy and genuine warmth before offering information or advice. Keep the tone calm and supportive throughout."
+        )
+
     if live_context:
         instruction += f"\n\n--- LIVE WEB CONTEXT ---\n{live_context}\n-------------------------"
     return instruction
+
+
+# ---------------------------------------------------------------------------
+# MODEL BACKENDS
+# ---------------------------------------------------------------------------
 
 def get_gemini_keys():
     keys_str = os.getenv("GEMINI_API_KEYS") or os.getenv("GEMINI_API_KEY") or ""
     return [k.strip() for k in keys_str.split(",") if k.strip()]
 
+
 gemini_key_index = 0
 
-def query_gemini(prompt: str, key: str, history: list, user_name: str, live_context: str = "") -> str:
+
+def query_gemini(prompt: str, key: str, history: list, user_name: str, live_context: str = "", emotional_state: str = "neutral") -> str:
     client = genai.Client(api_key=key)
     candidate_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
     last_err = None
@@ -168,7 +304,7 @@ def query_gemini(prompt: str, key: str, history: list, user_name: str, live_cont
                 model=m,
                 contents=contents,
                 config=types.GenerateContentConfig(
-                    system_instruction=get_dynamic_system_instruction(user_name, live_context),
+                    system_instruction=get_dynamic_system_instruction(user_name, live_context, emotional_state),
                     tools=[{"google_search": {}}],
                     temperature=0.25
                 )
@@ -183,13 +319,14 @@ def query_gemini(prompt: str, key: str, history: list, user_name: str, live_cont
 
     raise last_err or RuntimeError("Gemini engines failed.")
 
-def query_groq(prompt: str, history: list, user_name: str, live_context: str = "") -> str:
+
+def query_groq(prompt: str, history: list, user_name: str, live_context: str = "", emotional_state: str = "neutral") -> str:
     groq_key = os.getenv("GROQ_API_KEY")
     if not groq_key:
         raise RuntimeError("GROQ_API_KEY not configured.")
 
     client = Groq(api_key=groq_key)
-    messages = [{"role": "system", "content": get_dynamic_system_instruction(user_name, live_context)}]
+    messages = [{"role": "system", "content": get_dynamic_system_instruction(user_name, live_context, emotional_state)}]
     for turn in history[-6:]:
         messages.append({"role": turn["role"], "content": turn["content"]})
     messages.append({"role": "user", "content": prompt})
@@ -208,59 +345,74 @@ def query_groq(prompt: str, history: list, user_name: str, live_context: str = "
             continue
     raise RuntimeError("All Groq models failed.")
 
-def ask_ai_brain(prompt: str, session_id: str, user_id: str, user_name: str, live_context: str = "", media_url: str = None) -> str:
+
+def ask_ai_brain(prompt: str, session_id: str, user_id: str, user_name: str, live_context: str = "",
+                  media_url: str = None, emotional_state: str = "neutral") -> str:
     global gemini_key_index
     gemini_keys = get_gemini_keys()
     history = get_session_history(session_id, user_id)
 
     save_message(session_id, user_id, "user", prompt)
 
+    reply = None
+
     if gemini_keys:
         for _ in range(len(gemini_keys)):
             current_key = gemini_keys[gemini_key_index]
             try:
-                reply = query_gemini(prompt, current_key, history, user_name, live_context)
-                save_message(session_id, user_id, "assistant", reply, media_url)
-                return reply
+                reply = query_gemini(prompt, current_key, history, user_name, live_context, emotional_state)
+                break
             except Exception as e:
                 print(f"[Gemini Error on Key {gemini_key_index + 1}]: {e}")
                 gemini_key_index = (gemini_key_index + 1) % len(gemini_keys)
 
-    if os.getenv("GROQ_API_KEY"):
+    if reply is None and os.getenv("GROQ_API_KEY"):
         try:
             if not live_context:
-                clean_q = re.sub(r"\b(gibbon|given|hey|hi)\b", "", prompt, flags=re.IGNORECASE).strip()
-                live_context = search_live_web(clean_q or prompt)
-
-            reply = query_groq(prompt, history, user_name, live_context)
-            save_message(session_id, user_id, "assistant", reply, media_url)
-            return reply
+                clean_q = re.sub(r"\bgibbon\b", "", prompt, flags=re.IGNORECASE).strip()
+                prefer_news = prefers_news_search(prompt)
+                live_context = search_live_web(clean_q or prompt, prefer_news=prefer_news)
+            reply = query_groq(prompt, history, user_name, live_context, emotional_state)
         except Exception as e:
             print(f"[Groq Failover Error]: {e}")
 
-    fallback = f"I apologize {user_name}, connection is busy right now. Please try again."
-    save_message(session_id, user_id, "assistant", fallback, media_url)
-    return fallback
+    if reply is None:
+        reply = f"I apologize {user_name}, connection is busy right now. Please try again."
+
+    # Safety net: guarantee crisis resources are present regardless of what
+    # the model produced, in case it didn't follow the system instruction.
+    if emotional_state == "crisis" and "1800-599-0019" not in reply:
+        reply += CRISIS_RESOURCE_MSG
+
+    save_message(session_id, user_id, "assistant", reply, media_url)
+    return reply
+
+
+# ---------------------------------------------------------------------------
+# ROUTES
+# ---------------------------------------------------------------------------
 
 @app.get("/")
 def serve_index():
     purge_old_messages()
     return FileResponse("static/index.html")
 
+
 @app.get("/api/threads")
 def get_user_threads(user_id: str):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute("""
-        SELECT session_id, content, timestamp 
-        FROM chat_messages 
-        WHERE user_id = ? AND role = 'user' 
-        GROUP BY session_id 
+        SELECT session_id, content, timestamp
+        FROM chat_messages
+        WHERE user_id = ? AND role = 'user'
+        GROUP BY session_id
         ORDER BY id DESC LIMIT 50
     """, (user_id.strip(),))
     rows = c.fetchall()
     conn.close()
     return {"threads": [{"session_id": r[0], "title": r[1][:42], "time": r[2]} for r in rows]}
+
 
 @app.get("/api/thread_messages")
 def get_thread_messages(session_id: str):
@@ -271,6 +423,7 @@ def get_thread_messages(session_id: str):
     rows = c.fetchall()
     conn.close()
     return {"messages": [{"role": r[0], "content": r[1], "timestamp": r[2], "media_url": r[3]} for r in rows]}
+
 
 @app.post("/api/clear_threads")
 async def clear_user_threads(request: Request):
@@ -284,6 +437,7 @@ async def clear_user_threads(request: Request):
         conn.close()
     return {"status": "cleared"}
 
+
 @app.post("/api/chat")
 async def process_command(request: Request):
     data = await request.json()
@@ -293,13 +447,15 @@ async def process_command(request: Request):
     user_name = data.get("user_name", "Chief").strip() or "Chief"
     lower = raw_message.lower()
 
+    emotional_state = detect_emotional_state(raw_message)
+
     wants_image = any(w in lower for w in ["show me", "picture of", "photo of", "poster of", "pic of", "image of"])
     media_url = None
     if wants_image:
         media_url = fetch_web_image(raw_message)
 
     history = get_session_history(session_id, user_id, limit=4)
-    search_query = re.sub(r"\b(gibbon|given|hey|hi|hello|show me|picture of|poster of)\b", "", raw_message, flags=re.IGNORECASE).strip()
+    search_query = re.sub(r"\b(gibbon|hey|hi|hello|show me|picture of|poster of)\b", "", raw_message, flags=re.IGNORECASE).strip()
     final_search_query = search_query if len(search_query) >= 2 else raw_message.strip()
 
     if len(final_search_query.split()) <= 3 and history:
@@ -314,20 +470,28 @@ async def process_command(request: Request):
     if any(k in lower for k in ["parashini", "parassini", "parassinikkadavu"]):
         final_search_query += " Kannur Kerala Muthappan temple"
 
+    # UNIVERSAL SEARCH TRIGGER: fetch live context for anything that isn't a
+    # bare conversational greeting, and for short-but-time-sensitive queries
+    # (e.g. "cm of kerala") route to news search instead of general text search.
     conversational_greetings = ["hi", "hello", "hey", "thanks", "thank you", "ok", "okay", "bye", "goodnight", "good morning", "yo", "sup", "yes", "no"]
-    
+
     live_context = ""
-    if lower not in conversational_greetings and len(final_search_query) > 2:
-        live_context = search_live_web(final_search_query)
+    should_search = (
+        lower not in conversational_greetings
+        and (len(final_search_query) > 2 or is_time_sensitive_query(raw_message))
+        and emotional_state == "neutral"  # don't derail an emotional message with a web lookup
+    )
+    if should_search:
+        prefer_news = prefers_news_search(raw_message)
+        live_context = search_live_web(final_search_query, prefer_news=prefer_news)
 
-    clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
-    ai_answer = ask_ai_brain(clean_prompt or raw_message, session_id, user_id, user_name, live_context, media_url)
-    
-    # PREVENT EMPTY BUBBLES: If safety filters block the response or it comes back blank, return a fallback.
-    if not ai_answer or not ai_answer.strip():
-        ai_answer = "I'm sorry, my brain had a tiny hiccup processing that! Could you rephrase it for me?"
-
+    clean_prompt = re.sub(r"\bgibbon\b", "", raw_message, flags=re.IGNORECASE).strip()
+    ai_answer = ask_ai_brain(
+        clean_prompt or raw_message, session_id, user_id, user_name,
+        live_context, media_url, emotional_state
+    )
     return {"reply": ai_answer, "media_url": media_url}
+
 
 @app.get("/api/tts")
 async def text_to_speech(text: str):
@@ -350,6 +514,7 @@ async def text_to_speech(text: str):
         except Exception:
             continue
     return Response(content=bytes(audio_data), media_type="audio/mpeg")
+
 
 if __name__ == "__main__":
     import uvicorn
