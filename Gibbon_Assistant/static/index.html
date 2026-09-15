@@ -48,7 +48,6 @@
     .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: 95; backdrop-filter: blur(4px); }
     .sidebar-backdrop.active { display: block; }
 
-    /* SIDEBAR - OPEN ON SCREENS 800PX AND ABOVE */
     .hud-sidebar { width: var(--sidebar-width); background: rgba(8, 14, 28, 0.98); border-right: 1px solid var(--panel-border); backdrop-filter: blur(16px); display: flex; flex-direction: column; padding: 14px; z-index: 100; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; position: fixed; top: 0; bottom: 0; left: 0; transform: translateX(-100%); }
     .hud-sidebar.open { transform: translateX(0); }
 
@@ -116,10 +115,10 @@
     .user-display-name { font-size: 0.95rem; font-weight: 700; color: #fff; }
     .profile-gear-btn { background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.3); color: var(--primary); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-    /* SETTINGS MODAL */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 300; align-items: center; justify-content: center; padding: 16px; }
+    /* MODALS */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 300; align-items: center; justify-content: center; padding: 16px; }
     .modal-overlay.active { display: flex; }
-    .settings-card { width: 100%; max-width: 360px; background: #0b1326; border: 1.5px solid var(--primary); box-shadow: 0 0 24px var(--primary-glow); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .settings-card { width: 100%; max-width: 380px; background: #0b1326; border: 1.5px solid var(--primary); box-shadow: 0 0 24px var(--primary-glow); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
     .settings-title { font-family: 'Syncopate', sans-serif; font-size: 0.92rem; font-weight: 700; color: #fff; display: flex; justify-content: space-between; align-items: center; }
     .close-modal-btn { background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
     .input-group { display: flex; flex-direction: column; gap: 6px; }
@@ -129,6 +128,12 @@
     .avatar-option { width: 42px; height: 42px; border-radius: 50%; background: #030712; border: 1.5px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; cursor: pointer; }
     .avatar-option.selected { border-color: var(--primary); background: rgba(0, 240, 255, 0.2); }
     .save-profile-btn { background: var(--primary); border: none; color: #030712; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; font-weight: 800; padding: 10px; border-radius: 8px; cursor: pointer; }
+
+    /* CONFIRMATION MODAL */
+    .danger-card { border-color: var(--accent); box-shadow: 0 0 24px rgba(255, 0, 85, 0.4); }
+    .danger-btn { background: var(--accent); color: #fff; }
+    .modal-btn-row { display: flex; gap: 10px; margin-top: 6px; }
+    .cancel-btn { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; }
 
     /* VIEWPORT */
     .hud-viewport { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 8px 14px; position: relative; width: 100%; height: 100%; z-index: 10; overflow: hidden; min-width: 0; }
@@ -167,24 +172,7 @@
 
     .audio-toggle-btn { background: rgba(0, 240, 255, 0.1); border: 1px solid var(--primary); color: var(--primary); padding: 3px 6px; border-radius: 6px; cursor: pointer; font-size: 0.68rem; white-space: nowrap; flex-shrink: 0; }
 
-    /* MOBILE HEADER RESPONSIVE WRAP */
-    @media (max-width: 600px) {
-      .hud-header-bar {
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-      .header-left-tools { order: 1; }
-      .header-right-tools { order: 2; margin-left: auto; }
-      .center-brand-title {
-        order: 3;
-        width: 100%;
-        justify-content: center;
-        margin-top: 4px;
-      }
-      .center-brand-title img { display: inline-block; }
-    }
-
-    /* CHAT STREAM FEED */
+    /* CHAT STREAM */
     .chat-stream-box { width: 100%; max-width: 760px; margin: 0 auto; flex: 1; overflow-y: auto; padding: 10px 4px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
     .chat-stream-box::-webkit-scrollbar { width: 4px; }
     .chat-stream-box::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
@@ -203,18 +191,12 @@
     .msg-media-holder { margin-top: 8px; border-radius: 8px; overflow: hidden; border: 1px solid var(--panel-border); max-width: 100%; background: #000; }
     .msg-media-holder img { width: 100%; max-height: 280px; object-fit: cover; display: block; }
 
-    /* MARKDOWN TABLES */
-    .table-container { width: 100%; overflow-x: auto; margin: 8px 0; border: 1px solid var(--panel-border); border-radius: 6px; }
-    .hud-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-    .hud-table th { background: rgba(0, 240, 255, 0.15); color: var(--primary); padding: 6px 10px; border-bottom: 1px solid var(--primary); text-transform: uppercase; }
-    .hud-table td { padding: 6px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
-
-    /* PROGRESSIVE SEARCH TICKER */
+    /* LOADING TICKER */
     .loading-ticker-pill { display: none; align-items: center; gap: 8px; padding: 5px 14px; background: rgba(0, 240, 255, 0.12); border: 1px solid var(--primary); border-radius: 20px; font-size: 0.74rem; color: var(--primary); font-family: 'Orbitron', sans-serif; margin: 4px auto; flex-shrink: 0; }
     .spin-ring { width: 12px; height: 12px; border: 2px solid var(--primary); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* FOOTER & DOCK */
+    /* DOCK */
     .hud-footer { width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; padding-top: 10px; }
     
     .dock-pill-container { 
@@ -246,7 +228,7 @@
       padding: 4px 0; 
     }
 
-    /* LUFFY ANCHORED */
+    /* LUFFY ANCHORED PERCH */
     .luffy-dock-perch { 
       position: absolute; 
       bottom: calc(100% + 4px); 
@@ -263,63 +245,27 @@
     .luffy-bubble.show { opacity: 1; }
 
     .luffy-svg-3d { width: 100%; height: 100%; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.75)); animation: luffyBreathing 3.6s ease-in-out infinite; transform-origin: bottom center; }
-    
-    /* ANIMATIONS FOR STRETCHING, LOOKING, AND WAVING */
-    .luffy-dock-perch.excited .luffy-svg-3d { 
-      animation: luffyStretchAndLook 0.5s ease-in-out infinite alternate !important; 
-    }
-    .luffy-dock-perch.speaking .luffy-svg-3d { 
-      animation: luffySpeakingBounce 0.4s ease-in-out infinite alternate !important; 
-    }
-    .luffy-dock-perch.greeting .luffy-svg-3d { 
-      animation: luffyGreetWave 0.8s ease-in-out 2 !important; 
-    }
+    .luffy-dock-perch.excited .luffy-svg-3d { animation: luffyStretchAndLook 0.5s ease-in-out infinite alternate !important; }
+    .luffy-dock-perch.speaking .luffy-svg-3d { animation: luffySpeakingBounce 0.4s ease-in-out infinite alternate !important; }
+    .luffy-dock-perch.greeting .luffy-svg-3d { animation: luffyGreetWave 0.8s ease-in-out 2 !important; }
 
     @keyframes luffyBreathing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
-    
-    @keyframes luffyStretchAndLook { 
-      0% { transform: translateY(0) scale(1, 1); } 
-      100% { transform: translateY(-14px) scale(0.92, 1.08); } 
-    }
-
-    @keyframes luffySpeakingBounce { 
-      0% { transform: translateY(-4px) rotate(-3deg); } 
-      100% { transform: translateY(-10px) rotate(3deg); } 
-    }
-
-    @keyframes luffyGreetWave { 
-      0%, 100% { transform: translateY(0) rotate(0deg); } 
-      50% { transform: translateY(-12px) rotate(-8deg) scale(1.05); } 
-    }
-
-    .luffy-arm-wave {
-      transform-origin: 72px 86px;
-      transition: transform 0.3s;
-    }
-    .luffy-dock-perch.greeting .luffy-arm-wave {
-      animation: armWaveMotion 0.4s ease-in-out infinite alternate;
-    }
-    @keyframes armWaveMotion {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(-25deg); }
-    }
+    @keyframes luffyStretchAndLook { 0% { transform: translateY(0) scale(1, 1); } 100% { transform: translateY(-14px) scale(0.92, 1.08); } }
+    @keyframes luffySpeakingBounce { 0% { transform: translateY(-4px) rotate(-3deg); } 100% { transform: translateY(-10px) rotate(3deg); } }
+    @keyframes luffyGreetWave { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(-8deg) scale(1.05); } }
 
     .luffy-hands-grip { position: absolute; bottom: 2px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; }
     .grip-hand { width: 10px; height: 6px; background: #fed7aa; border: 1px solid #1e293b; border-radius: 4px 4px 2px 2px; }
 
     .dock-btn-group { display: flex; align-items: center; gap: 4px; align-self: flex-end; }
-
     .icon-action-btn { width: 34px; height: 34px; border-radius: 50%; border: none; background: transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
     .icon-action-btn svg { width: 17px; height: 17px; fill: currentColor; }
-    .icon-action-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
     .icon-action-btn.listening { color: var(--accent); background: rgba(255, 0, 85, 0.15); animation: pulseMic 1s infinite alternate; }
-
     @keyframes pulseMic { from { transform: scale(1); } to { transform: scale(1.1); } }
 
     .icon-cancel-btn { color: var(--accent); }
     .send-pill-btn { width: 36px; height: 36px; border-radius: 50%; background: #2563eb; border: none; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
     .send-pill-btn svg { width: 17px; height: 17px; fill: #fff; }
-
     .disclaimer-text { font-size: 0.66rem; color: #64748b; text-align: center; padding: 4px 0 2px; flex-shrink: 0; }
   </style>
 </head>
@@ -327,19 +273,35 @@
 
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-  <!-- PROFILE EDIT MODAL -->
+  <!-- DOUBLE CONFIRMATION MODAL -->
+  <div class="modal-overlay" id="clearConfirmModal">
+    <div class="settings-card danger-card">
+      <div class="settings-title" style="color:var(--accent);">
+        <span>PERMANENT PURGE</span>
+      </div>
+      <p style="font-size:0.88rem; color:#cbd5e1; line-height:1.4;">
+        Are you sure you want to clear your conversation history?
+        <br><br>
+        <b style="color:var(--accent);">Notice:</b> This will permanently delete your chats from the <b>Supabase cloud database</b> for this device. This cannot be undone.
+      </p>
+      <div class="modal-btn-row">
+        <button class="save-profile-btn cancel-btn" style="flex:1;" onclick="closeClearModal()">CANCEL</button>
+        <button class="save-profile-btn danger-btn" style="flex:1;" onclick="executeClearHistory()">PURGE DATA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
   <div class="modal-overlay" id="settingsModal">
     <div class="settings-card">
       <div class="settings-title">
-        <span>IDENTITY SETTINGS</span>
+        <span>IDENTITY PROFILE</span>
         <button class="close-modal-btn" onclick="closeSettingsModal()">✕</button>
       </div>
-
       <div class="input-group">
-        <label>DISPLAY NAME (How Gibbon calls you)</label>
-        <input type="text" id="modalUserName" class="settings-input" placeholder="e.g. Chief, Monkey Kuttan..." maxlength="24">
+        <label>YOUR NAME</label>
+        <input type="text" id="modalUserName" class="settings-input" placeholder="e.g. Sreekuttan" maxlength="24">
       </div>
-
       <div class="input-group">
         <label>CHOOSE AVATAR</label>
         <div class="avatar-grid" id="avatarGrid">
@@ -355,7 +317,6 @@
           <div class="avatar-option" data-avatar="👾">👾</div>
         </div>
       </div>
-
       <button class="save-profile-btn" onclick="saveProfileSettings()">SAVE IDENTITY</button>
     </div>
   </div>
@@ -372,17 +333,15 @@
           <span>GIBBON PRIVATE CHAT</span>
         </div>
       </div>
-      <button onclick="toggleSidebar()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;" class="sidebar-close-btn">✕</button>
+      <button onclick="toggleSidebar()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;">✕</button>
     </div>
 
-    <!-- NEW CHAT + CLEAR CHAT BUTTONS ROW -->
     <div class="sidebar-button-row">
       <button class="new-chat-btn-minimal" onclick="startNewThread()">
         <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         <span>New chat</span>
       </button>
-
-      <button class="clear-chat-btn-minimal" onclick="clearAllChats()" title="Clear All History">
+      <button class="clear-chat-btn-minimal" onclick="openClearModal()" title="Clear Database History">
         <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
       </button>
     </div>
@@ -396,7 +355,7 @@
     <div class="history-list" id="threadsList"></div>
 
     <div class="user-profile-dock">
-      <div class="user-profile-left" onclick="openSettingsModal()" title="Click to change profile">
+      <div class="user-profile-left" onclick="openSettingsModal()" title="Identity Settings">
         <div class="user-avatar-badge" id="sidebarAvatar">👑</div>
         <div class="user-display-name" id="sidebarName">Chief</div>
       </div>
@@ -410,8 +369,6 @@
         <div class="header-left-tools">
           <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰ CHATS</button>
         </div>
-
-        <!-- TIMING SECTIONS & WARNING ICON -->
         <div class="header-right-tools">
           <div class="time-stacked-box">
             <span class="date-row" id="liveDateRow">--</span>
@@ -420,7 +377,7 @@
           <div class="privacy-shield-btn" tabindex="0">
             🛡️
             <div class="privacy-tooltip">
-              <b>Privacy Guard Active:</b><br>Chat messages in this private thread are automatically purged after 15 days.
+              <b>Cloud Memory Shield:</b><br>Chat history is isolated to your unique device ID and stored in Supabase for 15 rolling days.
             </div>
           </div>
           <button class="audio-toggle-btn" id="voiceMuteToggleBtn" onclick="toggleVoice()">🔊 VOICE ON</button>
@@ -437,15 +394,13 @@
 
     <div class="loading-ticker-pill" id="loadingTicker">
       <div class="spin-ring"></div>
-      <span id="tickerText">I am looking into it...</span>
+      <span id="tickerText">Thinking...</span>
     </div>
 
     <footer class="hud-footer">
       <div class="dock-pill-container">
-        <!-- LUFFY PERCH RIDES ON TOP OF THE EXPANDING DOCK -->
         <div class="luffy-dock-perch" id="luffyPerch" onclick="luffyTap()">
           <div class="luffy-bubble" id="luffyBubble">Hooiii!</div>
-          
           <svg class="luffy-svg-3d" viewBox="0 0 100 110">
             <defs>
               <radialGradient id="strawGrad" cx="50%" cy="30%" r="60%">
@@ -463,7 +418,6 @@
                 <stop offset="100%" stop-color="#b91c1c"/>
               </linearGradient>
             </defs>
-
             <ellipse cx="50" cy="44" rx="46" ry="13" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
             <path d="M16 44 Q50 39 84 44" stroke="#dc2626" stroke-width="5" fill="none"/>
             <path d="M26 42 C28 18, 72 18, 74 42 Z" fill="url(#strawGrad)" stroke="#854d0e" stroke-width="2"/>
@@ -485,14 +439,7 @@
             <path d="M43 77 Q50 80 57 77" stroke="#ef4444" stroke-width="1.2" fill="none"/>
             <path d="M32 88 L68 88 L75 110 L25 110 Z" fill="url(#redVest)" stroke="#7f1d1d" stroke-width="1.8"/>
             <path d="M43 88 L50 100 L57 88 Z" fill="#fed7aa"/>
-
-            <!-- WAVING/POINTING ARM -->
-            <g id="luffyArm" class="luffy-arm-wave">
-              <path d="M72 86 Q88 74 84 60" stroke="#fed7aa" stroke-width="6" stroke-linecap="round" fill="none"/>
-              <circle cx="84" cy="58" r="4.5" fill="#fed7aa" stroke="#1e293b" stroke-width="1"/>
-            </g>
           </svg>
-
           <div class="luffy-hands-grip">
             <div class="grip-hand"></div>
             <div class="grip-hand"></div>
@@ -502,10 +449,10 @@
         <textarea id="hudInput" rows="1" placeholder="Type a message or use mic..."></textarea>
         
         <div class="dock-btn-group">
-          <button class="icon-action-btn icon-cancel-btn" id="audioStopBtn" onclick="stopCurrentAudio()" title="Stop Audio" aria-label="Stop Playback">
+          <button class="icon-action-btn icon-cancel-btn" id="audioStopBtn" onclick="stopCurrentAudio()" title="Stop Audio">
             <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
           </button>
-          <button class="icon-action-btn" id="micBtn" onclick="toggleVoiceInput()" title="Voice Input" aria-label="Microphone">
+          <button class="icon-action-btn" id="micBtn" onclick="toggleVoiceInput()" title="Voice Input">
             <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
           </button>
           <button class="send-pill-btn" onclick="sendMessage()" title="Send">
@@ -513,7 +460,6 @@
           </button>
         </div>
       </div>
-
       <div class="disclaimer-text">
         Gibbon AI can make mistakes. Verify important facts & calculations.
       </div>
@@ -521,12 +467,33 @@
   </div>
 
   <script>
-    function getOrdinal(n) {
-      const s = ["th", "st", "nd", "rd"];
-      const v = n % 100;
-      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    // --- 1. CRYPTOGRAPHIC DEVICE USER ISOLATION ---
+    function getOrCreateDeviceId() {
+      let id = localStorage.getItem('gibbon_device_id');
+      if (!id) {
+        // Generates an unforgeable, isolated device ID
+        id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? 
+             ('usr_' + crypto.randomUUID()) : 
+             ('usr_' + Math.random().toString(36).slice(2, 11) + Date.now().toString(36));
+        localStorage.setItem('gibbon_device_id', id);
+      }
+      return id;
     }
+    const userId = getOrCreateDeviceId();
 
+    let activeSessionId = localStorage.getItem('gibbon_active_thread') || ('session_' + Date.now());
+    localStorage.setItem('gibbon_active_thread', activeSessionId);
+
+    let currentUserName = localStorage.getItem('gibbon_user_name') || "Sreekuttan";
+    let currentUserAvatar = localStorage.getItem('gibbon_user_avatar') || "👑";
+
+    function updateProfileUI() {
+      document.getElementById('sidebarName').textContent = currentUserName;
+      document.getElementById('sidebarAvatar').textContent = currentUserAvatar;
+    }
+    updateProfileUI();
+
+    // Clock display
     function updateClock() {
       const now = new Date();
       const dateParts = new Intl.DateTimeFormat('en-GB', {
@@ -544,9 +511,7 @@
         if (p.type === 'year') year = p.value;
         if (p.type === 'weekday') weekday = p.value.toUpperCase();
       }
-
-      const dateString = `${getOrdinal(parseInt(day))} ${month}'${year} ${weekday}`;
-      document.getElementById('liveDateRow').textContent = dateString;
+      document.getElementById('liveDateRow').textContent = `${day} ${month}'${year} ${weekday}`;
 
       const timeString = new Intl.DateTimeFormat('en-GB', {
         timeZone: "Asia/Kolkata",
@@ -559,21 +524,7 @@
     setInterval(updateClock, 1000); 
     updateClock();
 
-    let userId = localStorage.getItem('gibbon_device_id') || ('user_' + Math.random().toString(36).substring(2, 9) + Date.now());
-    localStorage.setItem('gibbon_device_id', userId);
-
-    let activeSessionId = localStorage.getItem('gibbon_active_thread') || ('session_' + Date.now());
-    localStorage.setItem('gibbon_active_thread', activeSessionId);
-
-    let currentUserName = localStorage.getItem('gibbon_user_name') || "Chief";
-    let currentUserAvatar = localStorage.getItem('gibbon_user_avatar') || "👑";
-
-    function updateProfileUI() {
-      document.getElementById('sidebarName').textContent = currentUserName;
-      document.getElementById('sidebarAvatar').textContent = currentUserAvatar;
-    }
-    updateProfileUI();
-
+    // Audio & Voice
     let isVoiceMuted = localStorage.getItem('gibbon_voice_muted') === 'true';
     let currentAudio = null;
 
@@ -601,6 +552,7 @@
     }
     document.getElementById('sidebarBackdrop').onclick = toggleSidebar;
 
+    // Modals
     const settingsModal = document.getElementById('settingsModal');
     const modalUserName = document.getElementById('modalUserName');
     const avatarOptions = document.querySelectorAll('.avatar-option');
@@ -612,10 +564,7 @@
       });
       settingsModal.classList.add('active');
     }
-
-    function closeSettingsModal() {
-      settingsModal.classList.remove('active');
-    }
+    function closeSettingsModal() { settingsModal.classList.remove('active'); }
 
     avatarOptions.forEach(opt => {
       opt.addEventListener('click', () => {
@@ -626,7 +575,7 @@
 
     function saveProfileSettings() {
       const typed = modalUserName.value.trim();
-      currentUserName = typed.length > 0 ? typed : "Chief";
+      currentUserName = typed.length > 0 ? typed : "friend";
       const selOpt = document.querySelector('.avatar-option.selected');
       if (selOpt) currentUserAvatar = selOpt.dataset.avatar;
 
@@ -637,6 +586,30 @@
       luffyTap(`Hey ${currentUserName}!`);
     }
 
+    // Double Confirmation Purge Logic
+    const clearConfirmModal = document.getElementById('clearConfirmModal');
+    function openClearModal() { clearConfirmModal.classList.add('active'); }
+    function closeClearModal() { clearConfirmModal.classList.remove('active'); }
+
+    async function executeClearHistory() {
+      closeClearModal();
+      try {
+        await fetch('/api/clear_threads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId })
+        });
+      } catch (e) {
+        console.error("Failed to clear Supabase threads:", e);
+      }
+
+      localThreads = [];
+      localStorage.removeItem('gibbon_cached_threads_' + userId);
+      startNewThread();
+      luffyTap("Cloud data purged!");
+    }
+
+    // Threads
     let localThreads = JSON.parse(localStorage.getItem('gibbon_cached_threads_' + userId) || '[]');
 
     function saveThreadLocally(sessionId, promptText, timeStr) {
@@ -644,11 +617,7 @@
       if (existing) {
         existing.time = timeStr;
       } else {
-        localThreads.unshift({
-          session_id: sessionId,
-          title: promptText.slice(0, 38),
-          time: timeStr
-        });
+        localThreads.unshift({ session_id: sessionId, title: promptText.slice(0, 38), time: timeStr });
       }
       localStorage.setItem('gibbon_cached_threads_' + userId, JSON.stringify(localThreads));
     }
@@ -708,41 +677,7 @@
       renderThreadList(localThreads);
       document.getElementById('hudSidebar').classList.remove('open');
       document.getElementById('sidebarBackdrop').classList.remove('active');
-
       luffyTap("New chat ready!");
-    }
-
-    async function clearAllChats() {
-      if (!confirm("Are you sure you want to delete all saved conversations? This cannot be undone.")) {
-        return;
-      }
-
-      try {
-        await fetch('/api/clear_threads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId })
-        });
-      } catch (e) {
-        console.error("Failed to clear backend threads:", e);
-      }
-
-      localThreads = [];
-      localStorage.removeItem('gibbon_cached_threads_' + userId);
-      
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('gibbon_cached_threads') || key.startsWith('gibbon_sessions')) {
-          localStorage.removeItem(key);
-        }
-      });
-
-      const list = document.getElementById('threadsList');
-      if (list) {
-        list.innerHTML = `<div style="font-size:0.75rem; color:#475569; padding:8px;">No chat threads yet.</div>`;
-      }
-
-      startNewThread();
-      luffyTap("All chats cleared!");
     }
 
     async function switchThread(sessionId) {
@@ -751,15 +686,12 @@
         document.getElementById('sidebarBackdrop').classList.remove('active');
         return;
       }
-
       stopCurrentAudio();
       activeSessionId = sessionId;
       localStorage.setItem('gibbon_active_thread', activeSessionId);
-      
       renderThreadList(localThreads);
       document.getElementById('hudSidebar').classList.remove('open');
       document.getElementById('sidebarBackdrop').classList.remove('active');
-
       await loadThreadMessages();
     }
 
@@ -770,32 +702,17 @@
       try {
         const res = await fetch(`/api/thread_messages?session_id=${encodeURIComponent(activeSessionId)}&user_id=${encodeURIComponent(userId)}`);
         const data = await res.json();
-        
         stream.innerHTML = '';
 
         if (data.messages && data.messages.length > 0) {
-          data.messages.forEach(m => {
-            appendMessage(m.role, m.content, m.timestamp, m.media_url);
-          });
+          data.messages.forEach(m => appendMessage(m.role, m.content, m.timestamp, m.media_url));
         } else {
-          stream.innerHTML = `
-            <div style="text-align:center; color:#64748b; font-size:0.8rem; padding:20px;">
-              No prior messages found in this thread. Start typing below!
-            </div>
-          `;
+          stream.innerHTML = `<div style="text-align:center; color:#64748b; font-size:0.8rem; padding:20px;">No prior messages in this thread.</div>`;
         }
       } catch (err) {
-        console.error("Thread load error:", err);
-        stream.innerHTML = `
-          <div style="text-align:center; color:#f43f5e; font-size:0.8rem; padding:20px;">
-            Failed to retrieve messages. Check server connection.
-          </div>
-        `;
+        stream.innerHTML = `<div style="text-align:center; color:#f43f5e; font-size:0.8rem; padding:20px;">Failed to retrieve messages.</div>`;
       }
-      
-      setTimeout(() => {
-        stream.scrollTop = stream.scrollHeight;
-      }, 50);
+      setTimeout(() => { stream.scrollTop = stream.scrollHeight; }, 50);
     }
 
     function appendMessage(role, text, timeStr, mediaUrl = null) {
@@ -804,16 +721,10 @@
       row.className = `msg-bubble-wrap ${role === 'user' ? 'user' : 'assistant'}`;
 
       const formatted = role === 'assistant' ? formatMarkdownResponse(text) : escapeHtml(text);
-      let mediaHtml = '';
-      if (mediaUrl) {
-        mediaHtml = `
-          <div class="msg-media-holder">
-            <a href="${mediaUrl}" target="_blank">
-              <img src="${mediaUrl}" alt="Media visual" onerror="this.parentElement.style.display='none';" />
-            </a>
-          </div>
-        `;
-      }
+      let mediaHtml = mediaUrl ? `
+        <div class="msg-media-holder">
+          <a href="${mediaUrl}" target="_blank"><img src="${mediaUrl}" alt="Media visual" onerror="this.parentElement.style.display='none';" /></a>
+        </div>` : '';
 
       row.innerHTML = `
         <div class="msg-card">
@@ -829,42 +740,7 @@
 
     function formatMarkdownResponse(text) {
       if (!text) return "";
-
-      let clean = text.replace(/<br\s*\/?>/gi, '\n');
-
-      const lines = clean.trim().split("\n");
-      let inTable = false;
-      let tableHtml = "";
-      let parsedLines = [];
-
-      for (let line of lines) {
-        let trimmed = line.trim();
-        if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
-          if (/^\|[\s\-:|]+\|$/.test(trimmed)) continue;
-          const cells = trimmed.split("|").slice(1, -1).map(c => c.trim());
-          if (!inTable) {
-            inTable = true;
-            tableHtml = '<div class="table-container"><table class="hud-table"><thead><tr>';
-            cells.forEach(c => tableHtml += `<th>${escapeHtml(c)}</th>`);
-            tableHtml += '</tr></thead><tbody>';
-          } else {
-            tableHtml += '<tr>';
-            cells.forEach(c => tableHtml += `<td>${escapeHtml(c)}</td>`);
-            tableHtml += '</tr>';
-          }
-        } else {
-          if (inTable) {
-            tableHtml += '</tbody></table></div>';
-            parsedLines.push(tableHtml);
-            inTable = false;
-            tableHtml = "";
-          }
-          parsedLines.push(escapeHtml(trimmed));
-        }
-      }
-      if (inTable) parsedLines.push(tableHtml + '</tbody></table></div>');
-
-      return parsedLines.join("\n")
+      return text.replace(/<br\s*\/?>/gi, '\n')
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/^\s*[-*]\s+(.*)$/gm, '• $1')
@@ -872,23 +748,19 @@
         .replace(/\n/g, '<br>');
     }
 
-    function escapeHtml(t) { return t.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    function escapeHtml(t) { return (t||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+    // Loading ticker
     let tickerInterval;
     function startTicker() {
       const pill = document.getElementById('loadingTicker');
       const text = document.getElementById('tickerText');
       pill.style.display = 'inline-flex';
-      const steps = [
-        "I am looking into it...",
-        "Oops, looks like more time needed in a second...",
-        "Kidding, almost done...",
-        "Found it!"
-      ];
+      const steps = ["Thinking...", "Checking live sources...", "Composing answer..."];
       let i = 0; text.textContent = steps[0];
       tickerInterval = setInterval(() => {
         i++; if (i < steps.length) text.textContent = steps[i];
-      }, 1600);
+      }, 2200);
     }
 
     function stopTicker() {
@@ -896,6 +768,7 @@
       document.getElementById('loadingTicker').style.display = 'none';
     }
 
+    // Luffy Interactive State
     const luffyPerch = document.getElementById('luffyPerch');
     const hudInput = document.getElementById('hudInput');
 
@@ -903,23 +776,6 @@
       luffyPerch.classList.remove('excited', 'speaking');
       if (state) luffyPerch.classList.add(state);
     }
-
-    let typingTimer;
-    hudInput.addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = (this.scrollHeight) + 'px';
-
-      if (this.value.trim().length > 0) {
-        setLuffyState('excited');
-        triggerLuffyBubble("Hooiii!");
-        clearTimeout(typingTimer);
-        typingTimer = setTimeout(() => {
-          if (!currentAudio) setLuffyState(null);
-        }, 2600);
-      } else if (!currentAudio) {
-        setLuffyState(null);
-      }
-    });
 
     function triggerLuffyBubble(msg) {
       const b = document.getElementById('luffyBubble');
@@ -931,33 +787,10 @@
     function luffyTap(customText) {
       setLuffyState('excited');
       triggerLuffyBubble(customText || ("Hooiii " + currentUserName + "!"));
-      setTimeout(() => {
-        if (!currentAudio) setLuffyState(null);
-      }, 2400);
+      setTimeout(() => { if (!currentAudio) setLuffyState(null); }, 2400);
     }
 
-    // Trigger greeting automatically upon opening/loading the chat
-    window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        luffyGreet();
-      }, 500);
-    });
-
-    function luffyGreet() {
-      luffyPerch.classList.add('greeting', 'excited');
-      triggerLuffyBubble(`Oooi ${currentUserName}!`);
-      
-      if (!isVoiceMuted) {
-        const greetingAudio = new Audio(`/api/tts?text=${encodeURIComponent("Oooi " + currentUserName + "!")}`);
-        currentAudio = greetingAudio;
-        currentAudio.play().catch(() => {});
-      }
-
-      setTimeout(() => {
-        luffyPerch.classList.remove('greeting', 'excited');
-      }, 2500);
-    }
-
+    // Core Messaging
     async function sendMessage() {
       const val = hudInput.value.trim();
       if (!val) return;
@@ -972,16 +805,13 @@
         hour12: true
       }).format(now).toUpperCase();
 
-      // --- ADDED FIX: Capture local browser time ---
       const clientTime = now.toLocaleString("en-US", {
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         dateStyle: "full",
         timeStyle: "medium"
       });
-      // ---------------------------------------------
 
       appendMessage('user', val, nowTs);
-
       saveThreadLocally(activeSessionId, val, nowTs);
       renderThreadList(localThreads);
 
@@ -997,7 +827,7 @@
             session_id: activeSessionId,
             user_id: userId,
             user_name: currentUserName,
-            client_time: clientTime // <-- ADDED FIX: Sending time to Python backend
+            client_time: clientTime
           })
         });
         const data = await res.json();
@@ -1031,6 +861,7 @@
       }
     });
 
+    // Voice recognition
     const micBtn = document.getElementById('micBtn');
     let recognition = null;
     let isSpeechActive = false;
@@ -1048,21 +879,15 @@
         setLuffyState('excited');
         triggerLuffyBubble("Listening...");
       };
-
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        hudInput.value = transcript;
-        hudInput.style.height = 'auto';
-        hudInput.style.height = (hudInput.scrollHeight) + 'px';
+        hudInput.value = event.results[0][0].transcript;
         sendMessage();
       };
-
       recognition.onerror = () => {
         isSpeechActive = false;
         micBtn.classList.remove('listening');
         setLuffyState(null);
       };
-
       recognition.onend = () => {
         isSpeechActive = false;
         micBtn.classList.remove('listening');
@@ -1072,7 +897,7 @@
 
     function toggleVoiceInput() {
       if (!recognition) {
-        alert("Voice recognition not supported in this browser. Please use Chrome or Edge.");
+        alert("Voice recognition not supported in this browser.");
         return;
       }
       if (isSpeechActive) {
