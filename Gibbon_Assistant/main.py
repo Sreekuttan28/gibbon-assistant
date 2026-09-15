@@ -137,7 +137,7 @@ def search_live_web(query: str) -> str:
         print("[SEARCH] FIRECRAWL_API_KEY not configured.")
         return ""
 
-    url = "https://api.firecrawl.dev/v2/search"
+    url = "https://api.firecrawl.dev/v1/search"
     headers = {
         "Authorization": f"Bearer {firecrawl_key}",
         "Content-Type": "application/json"
@@ -154,15 +154,18 @@ def search_live_web(query: str) -> str:
         response = requests.post(url, headers=headers, json=payload, timeout=12)
         if response.status_code == 200:
             data = response.json()
-            results = data.get("data", [])
-            blocks = []
-            for item in results:
-                title = item.get("title", "No Title")
-                content = item.get("markdown") or item.get("description", "")
-                clean_content = content.replace("\n", " ").strip()[:1400]
-                if clean_content:
-                    blocks.append(f"- {title}: {clean_content}")
-            return "\n\n".join(blocks)
+            if isinstance(data, dict):
+                results = data.get("data", [])
+                blocks = []
+                for item in results:
+                    title = item.get("title", "No Title")
+                    content = item.get("markdown") or item.get("description", "")
+                    clean_content = content.replace("\n", " ").strip()[:1400]
+                    if clean_content:
+                        blocks.append(f"- {title}: {clean_content}")
+                return "\n\n".join(blocks)
+            else:
+                print(f"[SEARCH] Firecrawl returned unexpected format: {data}")
         else:
             print(f"[SEARCH] Firecrawl error: {response.status_code} - {response.text}")
     except Exception as e:
@@ -257,7 +260,6 @@ def query_gemini(prompt: str, history: list, user_name: str, live_context: str =
 
     system_instruction = get_dynamic_system_instruction(user_name, live_context)
     
-    # Updated to the required 2026 models based on your logs
     candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
 
     for _ in range(len(keys)):
@@ -301,7 +303,7 @@ def query_groq(prompt: str, history: list, user_name: str, live_context: str = "
                 messages.append({"role": turn["role"], "content": turn["content"]})
         messages.append({"role": "user", "content": prompt})
 
-        candidate_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+        candidate_models = ["openai/gpt-oss-20b", "openai/gpt-oss-safeguard-20b"]
         for m in candidate_models:
             try:
                 resp = client.chat.completions.create(
