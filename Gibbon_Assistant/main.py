@@ -198,16 +198,16 @@ def fetch_web_image(query: str) -> str:
 # SYSTEM INSTRUCTION
 # ============================================================
 
-def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> str:
-    now_ist = get_ist_now()
-    now_str = now_ist.strftime("%A, %d %B %Y at %I:%M %p IST")
+def get_dynamic_system_instruction(user_name: str, live_context: str = "", client_time: str = "") -> str:
+    # Use client browser time if provided, otherwise fallback to server time
+    now_str = client_time.strip() if client_time else get_ist_now().strftime("%A, %d %B %Y at %I:%M %p IST")
     call_name = user_name.strip() if user_name else "there"
 
     instruction = f"""
 You are Gibbon, a helpful, highly accurate AI companion engineered by MOKUTTAN LABS.
 The user's name is {call_name}. Address them naturally. Never call them "Chief" unless their name is explicitly Chief.
 
-Current real-world date and time: {now_str} (Indian Standard Time).
+Current real-world date and time: {now_str}.
 
 CORE GUIDELINES:
 1. FACTUAL ACCURACY: Evaluate all current events, real-time facts, and dates strictly against the current timestamp and provided LIVE WEB CONTEXT. Do not invent or guess terms of office, elections, or dates.
@@ -235,7 +235,7 @@ def get_gemini_keys():
 
 gemini_key_index = 0
 
-def query_gemini(prompt: str, history: list, user_name: str, live_context: str = "") -> str:
+def query_gemini(prompt: str, history: list, user_name: str, live_context: str = "", client_time: str = "") -> str:
     global gemini_key_index
     keys = get_gemini_keys()
     if not keys:
@@ -258,7 +258,7 @@ def query_gemini(prompt: str, history: list, user_name: str, live_context: str =
     else:
         collapsed_contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
 
-    system_instruction = get_dynamic_system_instruction(user_name, live_context)
+    system_instruction = get_dynamic_system_instruction(user_name, live_context, client_time)
     
     candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
 
@@ -287,7 +287,7 @@ def query_gemini(prompt: str, history: list, user_name: str, live_context: str =
 
     return ""
 
-def query_groq(prompt: str, history: list, user_name: str, live_context: str = "") -> str:
+def query_groq(prompt: str, history: list, user_name: str, live_context: str = "", client_time: str = "") -> str:
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         print("[GROQ] GROQ_API_KEY is not set.")
@@ -295,7 +295,7 @@ def query_groq(prompt: str, history: list, user_name: str, live_context: str = "
 
     try:
         client = Groq(api_key=api_key)
-        system_instruction = get_dynamic_system_instruction(user_name, live_context)
+        system_instruction = get_dynamic_system_instruction(user_name, live_context, client_time)
         messages = [{"role": "system", "content": system_instruction}]
 
         for turn in history[-6:]:
@@ -322,16 +322,16 @@ def query_groq(prompt: str, history: list, user_name: str, live_context: str = "
 
     return ""
 
-def ask_ai_brain(prompt: str, session_id: str, user_id: str, user_name: str, live_context: str = "", media_url: str = None) -> str:
+def ask_ai_brain(prompt: str, session_id: str, user_id: str, user_name: str, live_context: str = "", media_url: str = None, client_time: str = "") -> str:
     history = get_session_history(session_id, user_id, limit=8)
     save_message(session_id, user_id, "user", prompt)
 
     # 1. Primary engine: Gemini
-    reply = query_gemini(prompt, history, user_name, live_context)
+    reply = query_gemini(prompt, history, user_name, live_context, client_time)
 
     # 2. Fallback engine: Groq
     if not reply:
-        reply = query_groq(prompt, history, user_name, live_context)
+        reply = query_groq(prompt, history, user_name, live_context, client_time)
 
     # 3. Connection safety catch
     if not reply or not reply.strip():
@@ -446,6 +446,9 @@ async def process_command(request: Request):
         session_id = str(data.get("session_id", "")).strip() or f"session_{int(time.time() * 1000)}"
         user_id = str(data.get("user_id", "")).strip() or "default_user"
         user_name = str(data.get("user_name", "")).strip() or "Chief"
+        
+        # Pull client_time sent from the frontend JS
+        client_time = str(data.get("client_time", "")).strip()
 
         if not raw_message:
             return {"reply": "Tell me what's on your mind.", "media_url": None, "session_id": session_id}
@@ -463,8 +466,8 @@ async def process_command(request: Request):
 
         # Append current calendar anchor for time-sensitive topics
         if any(k in lower for k in ["today", "now", "current", "latest", "news", "score", "cm", "pm", "date"]):
-            current_date_str = get_ist_now().strftime("%d %B %Y")
-            search_query = f"{search_query} {current_date_str}"
+            date_anchor = client_time if client_time else get_ist_now().strftime("%d %B %Y")
+            search_query = f"{search_query} {date_anchor}"
 
         # Retrieve live context through Firecrawl for informational queries
         conversational_greetings = {"hi", "hello", "hey", "thanks", "thank you", "ok", "okay", "bye", "good night", "good morning", "yo", "sup"}
@@ -472,9 +475,9 @@ async def process_command(request: Request):
         if lower not in conversational_greetings and len(search_query) > 2:
             live_context = search_live_web(search_query)
 
-        # Generate response
+        # Generate response passing client_time
         clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip() or raw_message
-        ai_answer = ask_ai_brain(clean_prompt, session_id, user_id, user_name, live_context, media_url)
+        ai_answer = ask_ai_brain(clean_prompt, session_id, user_id, user_name, live_context, media_url, client_time)
 
         return {"reply": ai_answer, "media_url": media_url, "session_id": session_id}
 
