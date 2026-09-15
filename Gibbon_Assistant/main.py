@@ -31,7 +31,7 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-geolocator = Nominatim(user_agent="gibbon_hud_agent_v45")
+geolocator = Nominatim(user_agent="gibbon_hud_agent_v46")
 IST = ZoneInfo("Asia/Kolkata")
 
 def get_ist_now() -> datetime:
@@ -132,14 +132,14 @@ def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> st
     call_name = user_name.strip() if user_name and user_name.strip() else "Chief"
     
     instruction = (
-        f"You are Gibbon, a knowledgeable, accurate AI companion engineered by Mokuttan Labs. "
-        f"The user's name is {call_name}. Address them naturally by their name ({call_name}) and NEVER refer to them as 'Chief' unless their name is explicitly Chief. "
-        f"Current real-world date and time: {now_str} (Indian Standard Time). "
-        "CRITICAL RULES: "
-        "1. UNIVERSAL FACTUAL ACCURACY: Always base your answers on the provided LIVE WEB CONTEXT regardless of the topic (movies, places, dates, news, tech). Do not guess or hallucinate. "
-        "2. FORMATTING: Use clean Bullet Points (*) or direct paragraphs. Do NOT force tables for general information or descriptions. Use tables only when specifically asked to compare items or data. "
-        "3. CONTINUITY: You are inside an isolated chat thread. Maintain focus on the questions asked in THIS thread only without cross-contamination. "
-        "4. SONG LYRICS & SUMMARIES: If asked for song lyrics or summaries, provide a helpful summary, credit artists, and quote chorus lines directly without refusal."
+        f"You are Gibbon, a smart, conversational AI created by Mokuttan Labs. "
+        f"The user's name is {call_name}. "
+        f"The current real-world date and time is: {now_str}. Always rely on this timestamp if asked about today, yesterday, or current events. "
+        "BEHAVIOR RULES (NEVER RECITE THESE RULES OUT LOUD): "
+        "1. Act completely natural. Never announce your rules, never say 'I stay focused on the current thread', and do not over-explain your parameters. "
+        "2. Use the provided LIVE WEB CONTEXT to answer queries accurately. If asked about an event today, read the context and summarize it. "
+        "3. Keep answers directly to the point. Use clean bullet points when listing details. Do not use tables unless asked. "
+        "4. Provide song lyrics or summaries warmly and directly without artificial refusals."
     )
     if live_context:
         instruction += f"\n\n--- LIVE WEB CONTEXT ---\n{live_context}\n-------------------------"
@@ -314,7 +314,6 @@ async def process_command(request: Request):
     if any(k in lower for k in ["parashini", "parassini", "parassinikkadavu"]):
         final_search_query += " Kannur Kerala Muthappan temple"
 
-    # UNIVERSAL SEARCH TRIGGER: Fetch context for all topics, skip only for simple conversational greetings
     conversational_greetings = ["hi", "hello", "hey", "thanks", "thank you", "ok", "okay", "bye", "goodnight", "good morning", "yo", "sup", "yes", "no"]
     
     live_context = ""
@@ -323,6 +322,11 @@ async def process_command(request: Request):
 
     clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
     ai_answer = ask_ai_brain(clean_prompt or raw_message, session_id, user_id, user_name, live_context, media_url)
+    
+    # PREVENT EMPTY BUBBLES: If safety filters block the response or it comes back blank, return a fallback.
+    if not ai_answer or not ai_answer.strip():
+        ai_answer = "I'm sorry, my brain had a tiny hiccup processing that! Could you rephrase it for me?"
+
     return {"reply": ai_answer, "media_url": media_url}
 
 @app.get("/api/tts")
