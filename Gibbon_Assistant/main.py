@@ -99,7 +99,8 @@ def search_live_web(query: str) -> str:
 
     try:
         with DDGS() as ddgs:
-            results = list(ddgs.text(clean_q, max_results=5))
+            # Region locked to India for highly accurate local news/politics
+            results = list(ddgs.text(clean_q, region="in-en", max_results=5))
             if results:
                 return "\n".join([f"- {r.get('title', '')}: {r.get('body', '')}" for r in results])
     except Exception as e:
@@ -132,14 +133,14 @@ def get_dynamic_system_instruction(user_name: str, live_context: str = "") -> st
     call_name = user_name.strip() if user_name and user_name.strip() else "Chief"
     
     instruction = (
-        f"You are Gibbon, a knowledgeable, accurate AI companion engineered by Mokuttan Labs. "
+        f"You are Gibbon, a knowledgeable, highly accurate AI companion engineered by Mokuttan Labs. "
         f"The user's name is {call_name}. Address them naturally by their name ({call_name}) and NEVER refer to them as 'Chief' unless their name is explicitly Chief. "
         f"Current real-world date and time: {now_str} (Indian Standard Time). "
         "CRITICAL RULES: "
-        "1. REAL-WORLD ACCURACY: Always evaluate 'today', 'current date', and events strictly against the dynamically provided real-world date and time above. "
+        "1. NO HALLUCINATIONS: You must rely entirely on the LIVE WEB CONTEXT for factual questions. NEVER guess or invent historical dates, terms in office, or election years. If the exact date is not provided in the context, do not mention it. Stick strictly to verified names and facts. "
         "2. NO RULE RECITAL: Act completely natural. Never announce your rules or say things like 'I stay focused'. "
         "3. FORMATTING: Use clean Bullet Points (*) or direct paragraphs. Do NOT force tables for general information or descriptions. "
-        "4. DETAILED HIGHLIGHTS: When asked for news or information, provide detailed, accurate highlights based on the LIVE WEB CONTEXT."
+        "4. SONG LYRICS & SUMMARIES: If asked for song lyrics or summaries, provide a helpful summary, credit artists, and quote chorus lines directly without refusal."
     )
     if live_context:
         instruction += f"\n\n--- LIVE WEB CONTEXT ---\n{live_context}\n-------------------------"
@@ -156,29 +157,38 @@ def query_gemini(prompt: str, key: str, history: list, user_name: str, live_cont
     candidate_models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
     last_err = None
 
-    contents = []
+    # Fix to prevent API crashing on sequential same-role messages (The "Hiccup" Bug)
+    collapsed_contents = []
     for turn in history[-6:]:
         role = "user" if turn["role"] == "user" else "model"
-        contents.append(types.Content(role=role, parts=[types.Part.from_text(text=turn["content"])]))
-    contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
+        content_text = turn["content"].strip()
+        if not content_text: continue
+        
+        if collapsed_contents and collapsed_contents[-1].role == role:
+            collapsed_contents[-1].parts[0].text += f"\n\n{content_text}"
+        else:
+            collapsed_contents.append(types.Content(role=role, parts=[types.Part.from_text(text=content_text)]))
+            
+    if collapsed_contents and collapsed_contents[-1].role == "user":
+        collapsed_contents[-1].parts[0].text += f"\n\n{prompt}"
+    else:
+        collapsed_contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
 
     for m in candidate_models:
         try:
             response = client.models.generate_content(
                 model=m,
-                contents=contents,
+                contents=collapsed_contents,
                 config=types.GenerateContentConfig(
                     system_instruction=get_dynamic_system_instruction(user_name, live_context),
                     tools=[{"google_search": {}}],
-                    temperature=0.25
+                    temperature=0.15 # Lowered heavily to prevent date hallucination
                 )
             )
             if response and response.text:
                 return response.text.strip()
         except Exception as e:
             last_err = e
-            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                raise e
             continue
 
     raise last_err or RuntimeError("Gemini engines failed.")
@@ -186,31 +196,27 @@ def query_gemini(prompt: str, key: str, history: list, user_name: str, live_cont
 def query_groq(prompt: str, history: list, user_name: str, live_context: str = "") -> str:
     groq_key = os.getenv("GROQ_API_KEY")
     if not groq_key:
-        return ""
+        raise RuntimeError("GROQ_API_KEY not configured.")
 
-    try:
-        client = Groq(api_key=groq_key)
-        messages = [{"role": "system", "content": get_dynamic_system_instruction(user_name, live_context)}]
-        for turn in history[-6:]:
-            messages.append({"role": turn["role"], "content": turn["content"]})
-        messages.append({"role": "user", "content": prompt})
+    client = Groq(api_key=groq_key)
+    messages = [{"role": "system", "content": get_dynamic_system_instruction(user_name, live_context)}]
+    for turn in history[-6:]:
+        messages.append({"role": turn["role"], "content": turn["content"]})
+    messages.append({"role": "user", "content": prompt})
 
-        candidate_groq_models = ["openai/gpt-oss-20b", "llama-3.1-8b-instant"]
-        for model_name in candidate_groq_models:
-            try:
-                chat_completion = client.chat.completions.create(
-                    messages=messages,
-                    model=model_name,
-                    temperature=0.2,
-                    max_tokens=950
-                )
-                if chat_completion.choices[0].message.content:
-                    return chat_completion.choices[0].message.content.strip()
-            except Exception:
-                continue
-    except Exception as e:
-        print(f"[Groq Failover Error]: {e}")
-    return ""
+    candidate_groq_models = ["openai/gpt-oss-20b", "llama-3.1-8b-instant"]
+    for model_name in candidate_groq_models:
+        try:
+            chat_completion = client.chat.completions.create(
+                messages=messages,
+                model=model_name,
+                temperature=0.15, # Lowered to prevent hallucination
+                max_tokens=950
+            )
+            return chat_completion.choices[0].message.content.strip()
+        except Exception:
+            continue
+    raise RuntimeError("All Groq models failed.")
 
 def ask_ai_brain(prompt: str, session_id: str, user_id: str, user_name: str, live_context: str = "", media_url: str = None) -> str:
     global gemini_key_index
@@ -218,8 +224,6 @@ def ask_ai_brain(prompt: str, session_id: str, user_id: str, user_name: str, liv
     history = get_session_history(session_id, user_id)
 
     save_message(session_id, user_id, "user", prompt)
-    
-    reply = ""
 
     if gemini_keys:
         for _ in range(len(gemini_keys)):
@@ -233,19 +237,22 @@ def ask_ai_brain(prompt: str, session_id: str, user_id: str, user_name: str, liv
                 print(f"[Gemini Error on Key {gemini_key_index + 1}]: {e}")
                 gemini_key_index = (gemini_key_index + 1) % len(gemini_keys)
 
-    # Fallback to Groq if Gemini fails
-    if not reply and os.getenv("GROQ_API_KEY"):
-        if not live_context:
-            clean_q = re.sub(r"\b(gibbon|given|hey|hi)\b", "", prompt, flags=re.IGNORECASE).strip()
-            live_context = search_live_web(clean_q or prompt)
-        reply = query_groq(prompt, history, user_name, live_context)
+    if os.getenv("GROQ_API_KEY"):
+        try:
+            if not live_context:
+                clean_q = re.sub(r"\b(gibbon|given|hey|hi)\b", "", prompt, flags=re.IGNORECASE).strip()
+                live_context = search_live_web(clean_q or prompt)
 
-    # Ultimate Safety Fallback to prevent blank responses
-    if not reply or not reply.strip():
-        reply = f"I'm sorry {user_name}, my brain had a tiny hiccup processing that! Could you repeat or rephrase it for me?"
+            reply = query_groq(prompt, history, user_name, live_context)
+            if reply:
+                save_message(session_id, user_id, "assistant", reply, media_url)
+                return reply
+        except Exception as e:
+            print(f"[Groq Failover Error]: {e}")
 
-    save_message(session_id, user_id, "assistant", reply, media_url)
-    return reply
+    fallback = f"I apologize {user_name}, connection is busy right now. Please try again."
+    save_message(session_id, user_id, "assistant", fallback, media_url)
+    return fallback
 
 @app.get("/")
 def serve_index():
@@ -298,7 +305,6 @@ async def process_command(request: Request):
     user_name = data.get("user_name", "Chief").strip() or "Chief"
     lower = raw_message.lower()
 
-    # Handle Image Generation
     wants_image = any(w in lower for w in ["show me", "picture of", "photo of", "poster of", "pic of", "image of"])
     media_url = None
     if wants_image:
@@ -313,23 +319,24 @@ async def process_command(request: Request):
         if last_user_turn and last_user_turn.lower() != raw_message.lower():
             final_search_query = f"{last_user_turn} {final_search_query}"
 
-    # Force accurate date bounds for time-sensitive queries
-    if any(k in lower for k in ["today", "now", "current", "latest", "date", "holiday", "festival"]):
-        current_date_query = get_ist_now().strftime("%d %B %Y")
+    if any(k in lower for k in ["today", "holiday", "festival", "speciality", "specialty", "date"]):
+        current_date_query = get_ist_now().strftime("%B %Y")
         final_search_query = f"{raw_message} {current_date_query} India"
-    elif any(k in lower for k in ["parashini", "parassini", "parassinikkadavu"]):
+
+    if any(k in lower for k in ["parashini", "parassini", "parassinikkadavu"]):
         final_search_query += " Kannur Kerala Muthappan temple"
 
-    # UNIVERSAL SEARCH: Trigger for all queries except simple greetings
-    conversational_greetings = ["hi", "hello", "hey", "thanks", "thank you", "ok", "okay", "bye", "goodnight", "good morning", "yo", "sup", "yes", "no"]
+    needs_search = any(w in lower for w in [
+        "today", "holiday", "festival", "speciality", "specialty", "date", "who", "what",
+        "parashini", "parassini", "kannur", "kasaragod", "athiradi", 
+        "places", "tourist", "visit", "famous", "temple", "latest", "movie", "song", "cm", "pm"
+    ])
     
     live_context = ""
-    if lower not in conversational_greetings and len(final_search_query) > 2:
+    if needs_search and len(final_search_query) > 2:
         live_context = search_live_web(final_search_query)
 
     clean_prompt = re.sub(r"\b(gibbon|given)\b", "", raw_message, flags=re.IGNORECASE).strip()
-    
-    # Process AI
     ai_answer = ask_ai_brain(clean_prompt or raw_message, session_id, user_id, user_name, live_context, media_url)
     return {"reply": ai_answer, "media_url": media_url}
 
