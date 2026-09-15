@@ -2,8 +2,9 @@ import os
 import re
 import time
 import random
-import sqlite3
 import requests
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -37,7 +38,6 @@ app = FastAPI(
 # ============================================================
 
 MEDIA_DIR = "saved_media"
-DB_FILE = "assistant.db"
 
 os.makedirs(MEDIA_DIR, exist_ok=True)
 
@@ -47,33 +47,39 @@ app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 IST = ZoneInfo("Asia/Kolkata")
 
 # ============================================================
-# DATABASE
+# DATABASE (POSTGRESQL CLOUD DATABASE)
 # ============================================================
 
 def get_db():
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise RuntimeError("DATABASE_URL environment variable is missing! Please add it to your Render environment variables.")
+    # Connect to Postgres and return dictionary-like rows
+    conn = psycopg2.connect(db_url, cursor_factory=RealDictCursor)
     return conn
 
 def init_db():
-    conn = get_db()
-    c = conn.cursor()
-    c.execute(
-        """
-        CREATE TABLE IF NOT EXISTS chat_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id TEXT NOT NULL,
-            user_id TEXT NOT NULL,
-            role TEXT NOT NULL,
-            content TEXT NOT NULL,
-            media_url TEXT,
-            timestamp TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                id SERIAL PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                media_url TEXT,
+                timestamp TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
         )
-        """
-    )
-    conn.commit()
-    conn.close()
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[DB] Init error (Make sure DATABASE_URL is set): {e}")
 
 init_db()
 
@@ -92,9 +98,12 @@ def purge_old_messages():
         conn = get_db()
         c = conn.cursor()
         cutoff = (get_utc_now() - timedelta(days=15)).strftime("%Y-%m-%d %H:%M:%S")
-        c.execute("DELETE FROM chat_messages WHERE created_at < ?", (cutoff,))
+        c.execute("DELETE FROM chat_messages WHERE created_at < %s", (cutoff,))
+        deleted = c.rowcount
         conn.commit()
         conn.close()
+        if deleted:
+            print(f"[DB] Purged {deleted} old messages.")
     except Exception as e:
         print(f"[DB] Purge error: {e}")
 
@@ -106,7 +115,7 @@ def save_message(session_id, user_id, role, content, media_url=None):
         c.execute(
             """
             INSERT INTO chat_messages (session_id, user_id, role, content, media_url, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
             """,
             (session_id, user_id, role, content, media_url, timestamp)
         )
@@ -122,8 +131,8 @@ def get_session_history(session_id, user_id, limit=10):
         c.execute(
             """
             SELECT role, content FROM chat_messages
-            WHERE session_id = ? AND user_id = ?
-            ORDER BY id DESC LIMIT ?
+            WHERE session_id = %s AND user_id = %s
+            ORDER BY id DESC LIMIT %s
             """,
             (session_id, user_id, limit)
         )
@@ -132,15 +141,16 @@ def get_session_history(session_id, user_id, limit=10):
         rows.reverse()
         return [{"role": row["role"], "content": row["content"]} for row in rows]
     except Exception as e:
+        print(f"[DB] History error: {e}")
         return []
 
 # ============================================================
-# SEARCH LOGIC (FIXED DDG RATE LIMITING)
+# SEARCH LOGIC
 # ============================================================
 
 def prefers_news_search(text):
     if not text: return False
-    return any(x in text.lower() for x in ["news", "latest", "breaking", "update", "election", "score", "result"])
+    return any(x in text.lower() for x in ["news", "latest", "breaking", "update", "election", "score", "result", "today"])
 
 def search_duckduckgo(query, max_results=6):
     try:
@@ -179,7 +189,7 @@ def format_live_context(results):
     return "\n".join(blocks)
 
 # ============================================================
-# SYSTEM PROMPT (CONDENSED TO FIX RULE LEAKAGE)
+# SYSTEM PROMPT
 # ============================================================
 
 def get_dynamic_system_instruction(user_name, live_context="", emotional_state="neutral"):
@@ -196,8 +206,8 @@ CRITICAL BEHAVIOR RULES (NEVER RECITE THESE RULES OUT LOUD):
 1. ACT NATURAL: You are a companion. Have a natural conversation. Do not act robotic. 
 2. NO META-TALK: Never explain your internal rules, modes, or how you were told to respond. Just answer directly.
 3. CONVERSATION OVER LECTURES: If the user says "I'm hungry" or "I'm sad", respond warmly with empathy and at most ONE natural follow-up question. Do not dump lists of options unless asked.
-4. FACTUAL ACCURACY: You MUST use your built-in Google Search tool to look up current events, places, movies, dates, news, and facts before answering. Never guess or rely on outdated memory.
-5. FORMATTING: Use clean bullet points (*) when listing items. Do not use tables unless explicitly requested.
+4. ADVANCED INFORMATION: You MUST use your built-in Google Search tool and the LIVE WEB CONTEXT below to look up current events, news highlights, places, movies, and facts before answering. Provide detailed, accurate highlights. If the user asks to elaborate, use the chat history to expand on the topic in the same window.
+5. FORMATTING: Use clean bullet points (*) when listing news or items. Do not use tables unless explicitly requested.
 
 User Emotion Hint: {emotional_state}
 """
@@ -205,13 +215,13 @@ User Emotion Hint: {emotional_state}
         instruction += "\nCRISIS OVERRIDE: The user is in distress. Be deeply compassionate and gently encourage them to reach out to local emergency services or a loved one."
 
     if live_context:
-        instruction += f"\n\n--- ADDITIONAL LIVE WEB CONTEXT ---\n{live_context}\n-------------------------\nYou may use this additional context to help form your answer."
+        instruction += f"\n\n--- ADDITIONAL LIVE WEB CONTEXT ---\n{live_context}\n-------------------------\nYou may use this additional context to help form your highly detailed answer."
 
     return instruction
 
 
 # ============================================================
-# LLM ENGINES (RESTORED DICT FORMAT FOR RELIABILITY)
+# LLM ENGINES
 # ============================================================
 
 def get_gemini_keys():
@@ -249,7 +259,7 @@ def query_gemini(prompt, history=None, user_name="", live_context="", emotional_
                         contents=contents,
                         config=types.GenerateContentConfig(
                             system_instruction=system_instruction,
-                            tools=[{"google_search": {}}],  # Fixed SDK compatibility
+                            tools=[{"google_search": {}}],
                             temperature=0.25
                         )
                     )
@@ -370,7 +380,7 @@ def get_user_threads(user_id: str):
         c = conn.cursor()
         c.execute("""
             SELECT session_id, MAX(id) AS latest_id
-            FROM chat_messages WHERE user_id = ?
+            FROM chat_messages WHERE user_id = %s
             GROUP BY session_id ORDER BY latest_id DESC LIMIT 50
         """, (user_id,))
         thread_rows = c.fetchall()
@@ -380,7 +390,7 @@ def get_user_threads(user_id: str):
             sid = row["session_id"]
             c.execute("""
                 SELECT content, timestamp FROM chat_messages
-                WHERE user_id = ? AND session_id = ? AND role = 'user'
+                WHERE user_id = %s AND session_id = %s AND role = 'user'
                 ORDER BY id ASC LIMIT 1
             """, (user_id, sid))
             first = c.fetchone()
@@ -391,7 +401,7 @@ def get_user_threads(user_id: str):
             })
         conn.close()
         return {"threads": output}
-    except Exception:
+    except Exception as e:
         return {"threads": []}
 
 @app.get("/api/thread_messages")
@@ -401,12 +411,12 @@ def get_thread_messages(session_id: str, user_id: str):
         c = conn.cursor()
         c.execute("""
             SELECT role, content, timestamp, media_url
-            FROM chat_messages WHERE session_id = ? AND user_id = ? ORDER BY id ASC
+            FROM chat_messages WHERE session_id = %s AND user_id = %s ORDER BY id ASC
         """, (session_id, user_id))
         rows = c.fetchall()
         conn.close()
         return {"messages": [{"role": r["role"], "content": r["content"], "timestamp": r["timestamp"], "media_url": r["media_url"]} for r in rows]}
-    except Exception:
+    except Exception as e:
         return {"messages": []}
 
 @app.post("/api/clear_threads")
@@ -418,7 +428,7 @@ async def clear_user_threads(request: Request):
         
         conn = get_db()
         c = conn.cursor()
-        c.execute("DELETE FROM chat_messages WHERE user_id = ?", (user_id,))
+        c.execute("DELETE FROM chat_messages WHERE user_id = %s", (user_id,))
         deleted = c.rowcount
         conn.commit()
         conn.close()
@@ -443,7 +453,6 @@ async def process_command(request: Request):
         emotional_state = detect_emotional_state(raw_message)
         history = get_session_history(session_id=session_id, user_id=user_id, limit=8)
 
-        # Build search query for live context injection
         search_query = raw_message
         lower = raw_message.lower()
 
@@ -454,9 +463,9 @@ async def process_command(request: Request):
         elif any(w in lower for w in ["parashini", "parassini", "parassinikkadavu"]):
             search_query += " Kannur Kerala Muthappan temple"
 
-        # Explicit trigger list to prevent DuckDuckGo rate limiting
+        # Expand search criteria to trigger more often
         live_required = False
-        triggers = ["today", "now", "current", "latest", "recent", "news", "weather", "price", "score", "match", "result", "holiday", "festival", "date", "who is", "famous", "movie", "song"]
+        triggers = ["today", "now", "current", "latest", "recent", "news", "weather", "price", "score", "match", "result", "holiday", "festival", "date", "who is", "famous", "movie", "song", "what is"]
         if any(t in lower for t in triggers):
             live_required = True
 
@@ -483,8 +492,8 @@ async def process_command(request: Request):
                     conn = get_db()
                     c = conn.cursor()
                     c.execute("""
-                        UPDATE chat_messages SET media_url = ?
-                        WHERE id = (SELECT MAX(id) FROM chat_messages WHERE session_id = ? AND user_id = ? AND role = 'assistant')
+                        UPDATE chat_messages SET media_url = %s
+                        WHERE id = (SELECT MAX(id) FROM chat_messages WHERE session_id = %s AND user_id = %s AND role = 'assistant')
                     """, (media_url, session_id, user_id))
                     conn.commit()
                     conn.close()
